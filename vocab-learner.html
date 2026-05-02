@@ -1,0 +1,1183 @@
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║              ENGLISH VOCABULARY LEARNER APP                      ║
+║══════════════════════════════════════════════════════════════════║
+║                                                                  ║
+║  Expected Excel File Format (.xlsx or .xls):                     ║
+║  ┌──────────┬───────────────────────┬──────────┬────────────┬──────────┬──────────┬───────────────┐ ║
+║  │  Word    │   Collocations        │Phonetics │ Definition │ Synonyms │ Antonyms │Context/Example│ ║
+║  ├──────────┼───────────────────────┼──────────┼────────────┼──────────┼──────────┼───────────────┤ ║
+║  │ cubicle  │cubicle wall,          │/ˈkjuːbɪkl│ small work │ booth,   │ open     │ I work in a   │ ║
+║  │          │office cubicle         │          │ space      │ carrel   │ space    │ cubicle.      │ ║
+║  └──────────┴───────────────────────┴──────────┴────────────┴──────────┴──────────┴───────────────┘ ║
+║                                                                  ║
+║  Column Headers (Row 1) must be:                                 ║
+║    • Word                                                        ║
+║    • Collocations (optional - common word pairings)              ║
+║    • Phonetics (optional)                                        ║
+║    • Definition                                                  ║
+║    • Synonyms                                                    ║
+║    • Antonyms                                                    ║
+║    • Context/Example                                             ║
+║                                                                  ║
+║  Features:                                                       ║
+║    • Flashcards with 3‑D flip                                    ║
+║    • Vocabulary list with search                                 ║
+║    • Quiz: Multiple Choice / Type-in / Cloze Test                ║
+║    • 🔊 Audio pronunciation (Web Speech API)                     ║
+║    • 📈 Spaced Repetition (SRS levels 0–5)                       ║
+║                                                                  ║
+║  Tech: HTML5 · Tailwind CSS · SheetJS · FontAwesome              ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vocab Learner — English Vocabulary Builder</title>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' },
+        surface: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1' }
+      },
+      fontFamily: { sans: ['Inter','system-ui','sans-serif'] }
+    }
+  }
+}
+</script>
+
+<!-- FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+<!-- SheetJS -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<!-- App Styles -->
+<link rel="stylesheet" href="vocab-learner.css"/>
+</head>
+
+<body class="bg-surface-50 antialiased">
+
+<!-- ═══════════════════ NAVBAR ═══════════════════ -->
+<nav class="bg-white/80 backdrop-blur-md border-b border-surface-200 sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <a href="">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
+          <i class="fa-solid fa-book-open text-white text-sm"></i>
+        </div>
+      </a>
+      <a href=""><span class="text-lg font-bold text-brand-800 tracking-tight">Vocab Learner</span></a>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="wordCountBadge" class="hidden items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+        <i class="fa-solid fa-layer-group"></i>
+        <span id="wordCountText">0 words</span>
+      </div>
+      <button id="addWordNavBtn" onclick="openAddWordModal()" class="hidden flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-green-600 transition px-3 py-1.5 rounded-full hover:bg-green-50" title="Add a new word">
+        <i class="fa-solid fa-plus"></i>
+        <span class="hidden sm:inline">Add Word</span>
+      </button>
+
+      <div id="exportNavBtn" class="hidden relative">
+        <button onclick="toggleExportMenu()" class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-600 transition px-3 py-1.5 rounded-full hover:bg-brand-50" title="Export vocabulary">
+          <i class="fa-solid fa-download"></i>
+          <span class="hidden sm:inline">Export</span>
+        </button>
+        <div id="exportDropdown" class="hidden absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-surface-200 py-1 w-52 z-50">
+          <button onclick="exportCurrentCSV()" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-surface-50 flex items-center gap-2">
+            <i class="fa-solid fa-file-csv text-green-500"></i> Export as CSV
+          </button>
+          <button onclick="exportCurrentExcel()" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-surface-50 flex items-center gap-2">
+            <i class="fa-solid fa-file-excel text-emerald-600"></i> Export as Excel
+          </button>
+          <div class="border-t border-surface-100 my-1"></div>
+          <button onclick="openCustomSetsModal()" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-surface-50 flex items-center gap-2">
+            <i class="fa-solid fa-folder-open text-brand-500"></i> Manage Word Sets
+          </button>
+        </div>
+      </div>
+      <button onclick="showReportModal()" class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-600 transition px-3 py-1.5 rounded-full hover:bg-brand-50" title="Quiz Reports">
+        <i class="fa-solid fa-chart-bar"></i>
+        <span class="hidden sm:inline">Reports</span>
+      </button>
+      <button id="dailyGoalNavBtn" onclick="openDailyGoalModal()" class="hidden relative flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 transition px-3 py-1.5 rounded-full hover:bg-amber-50" title="Daily Goal">
+        <i class="fa-solid fa-bullseye"></i>
+        <span class="hidden sm:inline">Goal</span>
+        <span id="goalNavBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 text-white text-[9px] font-bold flex items-center justify-center">✓</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════ MAIN CONTAINER ═══════════════════ -->
+<main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+  <!-- ——— UPLOAD SECTION ——— -->
+  <section id="uploadSection" class="fade-in">
+    <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
+      <div class="p-6 sm:p-10 text-center">
+        <div class="max-w-lg mx-auto">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-brand-50 flex items-center justify-center">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-brand-500"></i>
+          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-1">Upload Your Vocabulary List</h2>
+          <p class="text-sm text-gray-500 mb-6">
+            Drop an <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong> file with columns:
+            <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Word</span>,
+            <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Collocations</span>,
+            <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Phonetics</span>,
+            <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Definition</span>,
+            <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Synonyms</span>,
+            <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Antonyms</span>,
+            <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Context/Example</span>
+          </p>
+
+          <label id="dropZone" class="upload-area cursor-pointer flex flex-col items-center gap-3 rounded-xl p-8 bg-surface-50">
+            <i class="fa-solid fa-file-arrow-up text-4xl text-brand-400"></i>
+            <span class="text-sm text-gray-500">Drag & drop here or <span class="text-brand-600 font-semibold underline">browse</span></span>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" class="hidden"/>
+          </label>
+
+          <!-- Restore from cache hint -->
+          <div id="cacheHint" class="hidden mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+            <i class="fa-solid fa-clock-rotate-left mr-1"></i>
+            Previous session found! <button id="restoreBtn" class="underline font-semibold hover:text-amber-900">Restore it</button>
+            or upload a new file.
+          </div>
+
+          <!-- File Import History -->
+          <div id="fileHistorySection" class="hidden mt-6">
+            <div class="bg-white rounded-xl border border-surface-200 overflow-hidden">
+              <div class="px-4 py-3 bg-surface-50 border-b border-surface-200 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-brand-500"></i>
+                <span class="text-sm font-semibold text-gray-700">Previously Imported Files</span>
+              </div>
+              <div id="fileHistoryList" class="divide-y divide-surface-100 max-h-60 overflow-y-auto p-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ——— TABS (hidden until data loads) ——— -->
+  <section id="appContent" class="hidden fade-in space-y-8">
+
+    <!-- Tab bar -->
+    <div class="flex items-center gap-1 bg-white rounded-xl p-1.5 shadow-sm border border-surface-200 max-w-xl mx-auto">
+      <button data-tab="flashcards" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition active text-brand-700 bg-brand-50"
+        onclick="switchTab('flashcards')">
+        <i class="fa-solid fa-clone mr-1"></i> Flashcards
+      </button>
+      <button data-tab="list" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+        onclick="switchTab('list')">
+        <i class="fa-solid fa-table-list mr-1"></i> List
+      </button>
+      <button data-tab="quiz" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+        onclick="switchTab('quiz')">
+        <i class="fa-solid fa-gamepad mr-1"></i> Quiz
+      </button>
+      <button data-tab="reader" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+        onclick="switchTab('reader')">
+        <i class="fa-solid fa-newspaper mr-1"></i> Reader
+      </button>
+      <button data-tab="story" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+        onclick="switchTab('story')">
+        <i class="fa-solid fa-book-open-reader mr-1"></i> <span class="hidden sm:inline">Truyện</span><span class="sm:hidden">TC</span>
+      </button>
+    </div>
+
+    <!-- ═══════ FLASHCARDS TAB ═══════ -->
+    <div id="tab-flashcards" class="tab-content">
+      <div class="flex flex-col items-center gap-6">
+        <!-- Card counter -->
+        <div class="flex items-center gap-3">
+          <p class="text-sm font-medium text-gray-400">
+            <span id="fcCurrent">1</span> / <span id="fcTotal">0</span>
+          </p>
+          <span id="fcSkipBadge" class="hidden text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full cursor-pointer hover:bg-green-100 transition"
+            onclick="showSkippedModal()"></span>
+        </div>
+
+        <!-- The card -->
+        <div class="perspective w-full max-w-md" style="height:400px;">
+          <div id="flashcard" class="card-inner cursor-pointer" onclick="flipCard()">
+            <!-- FRONT -->
+            <div class="card-face bg-white border border-surface-200 shadow-lg flex flex-col items-center justify-center p-8 select-none">
+              <p class="text-xs uppercase tracking-widest text-brand-400 mb-3 font-semibold">Word</p>
+              <h2 id="fcWord" class="text-4xl sm:text-5xl font-extrabold text-brand-800 text-center break-words leading-tight"></h2>
+              <p id="fcCollocations" class="text-sm text-emerald-600 mt-3 font-medium"></p>
+              <p id="fcPhonetics" class="text-lg text-brand-500 mt-2 font-medium"></p>
+              <div class="flex items-center gap-3 mt-4">
+                <button onclick="event.stopPropagation(); speakWord(document.getElementById('fcWord').textContent, this)"
+                  class="speaker-btn" title="Listen to pronunciation">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <span id="fcSrsBadge" class="srs-badge srs-0"><i class="fa-solid fa-signal" style="font-size:8px"></i> New</span>
+              </div>
+              <p class="mt-4 text-xs text-gray-400"><i class="fa-solid fa-hand-pointer mr-1"></i> Tap to reveal</p>
+            </div>
+            <!-- BACK -->
+            <div class="card-face card-back bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-lg p-6 sm:p-8 flex flex-col gap-4 overflow-y-auto">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                  <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-book mr-1"></i> Definition</p>
+                  <p id="fcDef" class="text-base leading-relaxed"></p>
+                </div>
+                <button onclick="event.stopPropagation(); speakWord(document.getElementById('fcWord').textContent, this)"
+                  class="speaker-btn speaker-btn-light flex-shrink-0" title="Listen">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-equals mr-1"></i> Synonyms</p>
+                  <p id="fcSyn" class="text-sm leading-relaxed text-brand-100"></p>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-not-equal mr-1"></i> Antonyms</p>
+                  <p id="fcAnt" class="text-sm leading-relaxed text-brand-100"></p>
+                </div>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-quote-left mr-1"></i> Example</p>
+                <p id="fcCtx" class="text-sm italic leading-relaxed text-brand-100"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation buttons -->
+        <div class="flex items-center gap-4">
+          <button onclick="fcNav(-1)" class="w-12 h-12 rounded-full bg-white border border-surface-200 shadow-sm text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <button onclick="shuffleCards()" class="h-10 px-5 rounded-full bg-white border border-surface-200 shadow-sm text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center gap-2">
+            <i class="fa-solid fa-shuffle"></i> Shuffle
+          </button>
+          <button onclick="markKnown()" class="h-10 px-5 rounded-full bg-white border border-surface-200 shadow-sm text-sm font-medium text-green-600 hover:bg-green-50 hover:border-green-300 transition flex items-center gap-2"
+            title="Skip this word — I already know it">
+            <i class="fa-solid fa-circle-check"></i> Known
+          </button>
+          <button onclick="fcNav(1)" class="w-12 h-12 rounded-full bg-white border border-surface-200 shadow-sm text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <!-- Auto-play toggle -->
+        <div class="flex flex-col items-center gap-1">
+          <div class="flex items-center gap-2">
+            <button id="autoPlayBtn" onclick="toggleAutoPlay()"
+              class="auto-play-btn h-10 px-5 rounded-full bg-white border border-surface-200 shadow-sm text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center gap-2"
+              title="Auto-advance cards when idle">
+              <span id="autoPlayDot" class="w-2 h-2 rounded-full bg-gray-400 transition-colors"></span>
+              <i class="fa-solid fa-clock"></i> Auto-play
+            </button>
+            <button onclick="openSettings()"
+              class="w-10 h-10 rounded-full bg-white border border-surface-200 shadow-sm text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center"
+              title="Auto-play settings">
+              <i class="fa-solid fa-gear"></i>
+            </button>
+          </div>
+          <span id="autoCountdown" class="text-xs text-gray-400 font-medium h-4"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ LIST TAB ═══════ -->
+    <div id="tab-list" class="tab-content hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
+        <!-- Search -->
+        <div class="p-4 border-b border-surface-200 flex items-center gap-3">
+          <div class="flex-1 relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input id="searchInput" type="text" placeholder="Search words…"
+              class="w-full pl-9 pr-4 py-2.5 rounded-lg border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition"
+              oninput="renderTable()"/>
+          </div>
+          <span id="listCount" class="text-xs text-gray-400 whitespace-nowrap"></span>
+        </div>
+        <!-- Table container -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-surface-50 text-xs uppercase text-gray-500 tracking-wider">
+              <tr>
+                <th class="px-4 py-3 font-semibold">#</th>
+                <th class="px-4 py-3 font-semibold">Word</th>
+                <th class="px-4 py-3 font-semibold hidden sm:table-cell">Collocations</th>
+                <th class="px-4 py-3 font-semibold hidden sm:table-cell">Phonetics</th>
+                <th class="px-4 py-3 font-semibold hidden md:table-cell">Definition</th>
+                <th class="px-4 py-3 font-semibold hidden md:table-cell">Synonyms</th>
+                <th class="px-4 py-3 font-semibold hidden lg:table-cell">Antonyms</th>
+                <th class="px-4 py-3 font-semibold hidden lg:table-cell">Example</th>
+                <th class="px-4 py-3 font-semibold hidden sm:table-cell">Level</th>
+              </tr>
+            </thead>
+            <tbody id="vocabTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ QUIZ TAB ═══════ -->
+    <div id="tab-quiz" class="tab-content hidden">
+
+      <!-- Quiz Start Screen -->
+      <div id="quizStart" class="text-center py-10 space-y-5">
+        <div class="w-20 h-20 mx-auto rounded-2xl bg-brand-50 flex items-center justify-center">
+          <i class="fa-solid fa-brain text-3xl text-brand-500"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Test Your Knowledge</h3>
+        <p class="text-sm text-gray-500 max-w-sm mx-auto">Choose a quiz mode, set the number of questions, and go! Words you struggle with will appear more often thanks to <strong>spaced repetition</strong>.</p>
+
+        <div class="flex flex-col items-center gap-3 max-w-xs mx-auto">
+          <!-- Word range -->
+          <div class="flex items-center gap-3 w-full">
+            <label class="text-sm text-gray-500 w-24 text-right">Range:</label>
+            <div class="flex-1 flex items-center gap-1">
+              <input id="quizRangeFrom" type="number" min="1" placeholder="1"
+                class="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-300"/>
+              <span class="text-gray-400">—</span>
+              <input id="quizRangeTo" type="number" min="1" placeholder="All"
+                class="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-brand-300"/>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 -mt-1">e.g. 1–20 for Day 1, 21–40 for Day 2</p>
+          <div class="w-full">
+            <label class="text-sm text-gray-500 text-center block mb-2">Mode <span class="text-xs text-gray-400">(select one or more)</span></label>
+            <div id="quizModeChips" class="flex flex-wrap justify-center gap-2">
+              <button type="button" data-mode="mc" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">📝 MC</button>
+              <button type="button" data-mode="typein" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">⌨️ Type-in</button>
+              <button type="button" data-mode="cloze" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">📖 Cloze</button>
+              <button type="button" data-mode="listening" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🎧 Listening</button>
+              <button type="button" data-mode="reverse" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🔄 Reverse</button>
+              <button type="button" data-mode="synonym" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🔗 Synonym</button>
+            </div>
+            <div class="flex justify-center gap-3 mt-2">
+              <button onclick="selectAllQuizModes()" class="text-xs text-brand-500 hover:text-brand-700 font-semibold transition">Select All</button>
+              <span class="text-xs text-gray-300">|</span>
+              <button onclick="selectRecallModes()" class="text-xs text-amber-600 hover:text-amber-700 font-semibold transition" title="Type-in + Listening + Reverse — harder modes that force active recall">🧠 Recall Only</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 w-full">
+            <label class="text-sm text-gray-500 w-24 text-right">Questions:</label>
+            <select id="quizLength" class="flex-1 border border-surface-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+              <option value="25">25</option>
+              <option value="30">30</option>
+              <option value="40">40</option>
+              <option value="50">50</option>
+              <option value="9999">All</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Mode descriptions -->
+        <div class="text-xs text-gray-400 max-w-sm mx-auto space-y-1">
+          <p><strong class="text-gray-500">MC:</strong> Pick the correct word from 4 options.</p>
+          <p><strong class="text-gray-500">Type-in:</strong> Type the word from its definition.</p>
+          <p><strong class="text-gray-500">Cloze:</strong> Fill in the missing word in a sentence.</p>
+          <p><strong class="text-gray-500">Listening:</strong> Hear the word and type what you hear.</p>
+          <p><strong class="text-gray-500">Reverse:</strong> See a word, type its definition.</p>
+          <p><strong class="text-gray-500">Synonym:</strong> Pick the correct synonym.</p>
+          <p class="mt-1 text-amber-500"><strong>🧠 Recall Only:</strong> Type-in + Listening + Reverse — forces active recall for stronger memory.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button onclick="startQuiz()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md hover:shadow-lg transition">
+            <i class="fa-solid fa-play"></i> Start Quiz
+          </button>
+          <button onclick="startSmartSession()" class="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition">
+            <i class="fa-solid fa-bolt"></i> Quick Study (5 min)
+          </button>
+          <button id="reviewWrongBtn" onclick="startWrongWordsQuiz()" class="hidden inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition">
+            <i class="fa-solid fa-rotate"></i> Review Wrong Words (<span id="wrongWordCount">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <!-- Quiz In-Progress -->
+      <div id="quizPlay" class="hidden max-w-xl mx-auto space-y-6">
+        <!-- top bar -->
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-gray-500">
+            Question <span id="qNum">1</span> / <span id="qTotal">10</span>
+          </span>
+          <div class="flex items-center gap-3">
+            <span id="quizModeBadge" class="mode-badge"></span>
+            <div class="flex items-center gap-4 text-sm font-semibold">
+              <span class="text-green-600"><i class="fa-solid fa-check mr-1"></i><span id="qCorrect">0</span></span>
+              <span class="text-red-500"><i class="fa-solid fa-xmark mr-1"></i><span id="qWrong">0</span></span>
+            </div>
+            <button onclick="stopQuiz()" class="text-xs text-gray-400 hover:text-red-500 font-semibold transition ml-1" title="Stop quiz">
+              <i class="fa-solid fa-xmark mr-0.5"></i> Stop
+            </button>
+          </div>
+        </div>
+        <!-- Smart Session Timer -->
+        <div id="smartTimer" class="hidden flex items-center justify-center gap-2 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-200 px-4 py-1.5 rounded-full mx-auto w-fit">
+          <i class="fa-solid fa-bolt text-amber-500"></i>
+          <span id="smartTimerText">5:00</span>
+          <span class="text-xs font-normal text-amber-500">remaining</span>
+        </div>
+        <!-- progress bar -->
+        <div class="w-full h-2 bg-surface-200 rounded-full overflow-hidden">
+          <div id="quizProgress" class="h-full bg-brand-500 rounded-full transition-all duration-500" style="width:0%"></div>
+        </div>
+        <!-- question card -->
+        <div class="bg-white rounded-2xl border border-surface-200 shadow-sm p-6 sm:p-8 text-center">
+          <p id="quizPrompt" class="text-xs uppercase tracking-widest text-brand-400 font-semibold mb-3">Which word matches this definition?</p>
+          <p id="quizQuestion" class="text-lg sm:text-xl font-semibold text-gray-800 leading-relaxed"></p>
+        </div>
+        <!-- MC options -->
+        <div id="quizOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-3 hidden"></div>
+        <!-- Text input area (type-in & cloze) -->
+        <div id="quizInputArea" class="hidden space-y-3">
+          <input id="quizTextInput" type="text" class="quiz-text-input" placeholder="Type your answer…" autocomplete="off"/>
+          <div class="text-center">
+            <button id="quizSubmitBtn" type="button" onclick="submitTextAnswer()"
+              class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition">
+              <i class="fa-solid fa-paper-plane"></i> Submit
+            </button>
+          </div>
+          <div id="quizTextFeedback" class="hidden quiz-text-feedback"></div>
+        </div>
+        <!-- Speaker reveal (shown after answering) -->
+        <div id="quizSpeakerReveal" class="hidden flex flex-col items-center gap-1"></div>
+        <!-- Context reinforcement (shown after correct answer) -->
+        <div id="quizContextCard" class="hidden"></div>
+        <!-- Explain Answer Panel (shown after wrong answer) -->
+        <div id="quizExplain" class="hidden"></div>
+        <!-- next button -->
+        <div class="text-center">
+          <button id="quizNextBtn" type="button" onclick="nextQuestion()" class="hidden inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-xl transition">
+            Next <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <p class="text-xs text-gray-400 mt-2"><kbd class="px-1.5 py-0.5 bg-surface-100 rounded text-[10px] font-mono">Enter</kbd> or <kbd class="px-1.5 py-0.5 bg-surface-100 rounded text-[10px] font-mono">Space</kbd> to submit / next</p>
+        </div>
+      </div>
+
+      <!-- Quiz Summary -->
+      <div id="quizSummary" class="hidden max-w-md mx-auto text-center space-y-6 py-6">
+        <div class="relative inline-block">
+          <svg class="w-36 h-36" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#e2e8f0" stroke-width="10"/>
+            <circle id="summaryRing" class="progress-ring__circle" cx="60" cy="60" r="52" fill="none" stroke="#3b82f6"
+              stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+          </svg>
+          <span id="summaryPercent" class="absolute inset-0 flex items-center justify-center text-3xl font-extrabold text-brand-700">0%</span>
+        </div>
+        <h3 id="summaryTitle" class="text-xl font-bold text-gray-800"></h3>
+        <p id="summarySubtext" class="text-sm text-gray-500"></p>
+        <div class="flex justify-center gap-6 text-sm font-semibold">
+          <span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i><span id="sumCorrect">0</span> Correct</span>
+          <span class="text-red-500"><i class="fa-solid fa-circle-xmark mr-1"></i><span id="sumWrong">0</span> Wrong</span>
+        </div>
+        <!-- Mistake Insights -->
+        <div id="summaryInsights" class="hidden text-left bg-white rounded-xl border border-surface-200 p-4">
+          <p class="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-3"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i> Mistake Insights</p>
+          <div id="insightGrid" class="insight-grid"></div>
+        </div>
+        <!-- Wrong words list with explanations -->
+        <div id="summaryWrongList" class="hidden text-left bg-surface-50 rounded-xl p-4 max-h-72 overflow-y-auto">
+          <p class="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-2"><i class="fa-solid fa-circle-xmark mr-1"></i> Words to review</p>
+          <div id="summaryWrongWords" class="space-y-2"></div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button onclick="startQuiz()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-xl transition">
+            <i class="fa-solid fa-rotate"></i> Play Again
+          </button>
+          <button id="summaryReviewBtn" onclick="startWrongWordsQuiz()" class="hidden inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-2.5 rounded-xl transition">
+            <i class="fa-solid fa-book-open"></i> Review Wrong Words
+          </button>
+          <button onclick="backToQuizStart()" class="inline-flex items-center gap-2 bg-white border border-surface-200 hover:bg-surface-50 text-gray-700 font-semibold px-6 py-2.5 rounded-xl transition">
+            <i class="fa-solid fa-sliders"></i> Change Settings
+          </button>
+          <button onclick="switchTab('flashcards')" class="inline-flex items-center gap-2 bg-white border border-surface-200 hover:bg-surface-50 text-gray-700 font-semibold px-6 py-2.5 rounded-xl transition">
+            <i class="fa-solid fa-clone"></i> Flashcards
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ READER TAB ═══════ -->
+    <div id="tab-reader" class="tab-content hidden">
+
+      <!-- Reader Header -->
+      <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
+        <div class="p-6 space-y-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <i class="fa-solid fa-newspaper text-white"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-800">Article Reader</h3>
+              <p class="text-xs text-gray-400">Read real articles from VOA Learning English — vocab words are highlighted automatically</p>
+            </div>
+          </div>
+
+          <!-- Category selector -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Category:</span>
+            <button onclick="fetchVOAArticles('all')" class="reader-cat-btn active" data-cat="all">All</button>
+            <button onclick="fetchVOAArticles('arts-culture')" class="reader-cat-btn" data-cat="arts-culture">Arts &amp; Culture</button>
+            <button onclick="fetchVOAArticles('health-lifestyle')" class="reader-cat-btn" data-cat="health-lifestyle">Health</button>
+            <button onclick="fetchVOAArticles('science-technology')" class="reader-cat-btn" data-cat="science-technology">Science &amp; Tech</button>
+            <button onclick="fetchVOAArticles('us')" class="reader-cat-btn" data-cat="us">US News</button>
+            <button onclick="fetchVOAArticles('world')" class="reader-cat-btn" data-cat="world">World</button>
+          </div>
+
+          <!-- Custom URL input -->
+          <div class="flex items-center gap-2">
+            <div class="flex-1 relative">
+              <i class="fa-solid fa-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+              <input id="readerCustomUrl" type="url" placeholder="Or paste any article URL (English)..."
+                class="w-full pl-9 pr-4 py-2.5 rounded-lg border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 transition"/>
+            </div>
+            <button onclick="loadCustomArticle()" class="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition flex items-center gap-1">
+              <i class="fa-solid fa-arrow-right"></i> Load
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article List -->
+      <div id="readerArticleList" class="mt-5 space-y-3"></div>
+
+      <!-- Loading -->
+      <div id="readerLoading" class="hidden mt-5">
+        <div class="bg-white rounded-2xl shadow-sm border border-surface-200 p-10 text-center">
+          <div class="reader-loading-spinner mx-auto mb-4"></div>
+          <p class="text-sm font-semibold text-gray-500">Fetching articles...</p>
+        </div>
+      </div>
+
+      <!-- Article Reader View -->
+      <div id="readerView" class="hidden mt-5">
+        <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
+          <!-- Article Header -->
+          <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4">
+            <button onclick="closeReaderView()" class="text-white/80 hover:text-white text-xs font-semibold mb-2 flex items-center gap-1 transition">
+              <i class="fa-solid fa-arrow-left"></i> Back to articles
+            </button>
+            <h2 id="readerTitle" class="text-lg font-bold text-white leading-snug"></h2>
+            <p id="readerMeta" class="text-xs text-white/70 mt-1"></p>
+          </div>
+          <!-- Toolbar -->
+          <div class="px-6 py-3 border-b border-surface-200 flex items-center gap-2 flex-wrap bg-surface-50">
+            <button onclick="toggleReaderTranslation()" id="readerToggleVI"
+              class="text-xs font-semibold text-gray-500 hover:text-emerald-700 transition px-3 py-1.5 rounded-lg hover:bg-emerald-50 border border-surface-200">
+              <i class="fa-solid fa-language mr-1"></i> <span id="readerToggleLabel">Translate Paragraphs</span>
+            </button>
+            <button onclick="speakArticle()" id="readerSpeakBtn"
+              class="text-xs font-semibold text-gray-500 hover:text-emerald-700 transition px-3 py-1.5 rounded-lg hover:bg-emerald-50 border border-surface-200">
+              <i class="fa-solid fa-volume-high mr-1"></i> Read Aloud
+            </button>
+            <button onclick="saveCurrentArticle()"
+              class="text-xs font-semibold text-gray-500 hover:text-emerald-700 transition px-3 py-1.5 rounded-lg hover:bg-emerald-50 border border-surface-200">
+              <i class="fa-solid fa-bookmark mr-1"></i> Save
+            </button>
+            <span id="readerVocabCount" class="ml-auto text-xs text-emerald-600 font-semibold"></span>
+          </div>
+          <!-- Article Body -->
+          <div id="readerBody" class="p-6 sm:p-8 reader-body leading-relaxed text-gray-700"></div>
+          <!-- Legend -->
+          <div class="px-6 pb-5">
+            <div class="flex items-center gap-4 flex-wrap text-xs text-gray-400">
+              <span><span class="reader-vocab-word" style="cursor:default;font-size:0.8rem">highlighted</span> = from your vocab list</span>
+              <span>Click a word to hear pronunciation &amp; see definition</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Articles -->
+      <div id="readerSavedSection" class="mt-6">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-sm font-bold text-gray-600 flex items-center gap-2">
+            <i class="fa-solid fa-bookmark text-emerald-500"></i> Saved Articles
+          </h4>
+          <button onclick="clearAllSavedArticles()" id="clearArticlesBtn" class="hidden text-xs text-red-400 hover:text-red-600 font-semibold transition">
+            <i class="fa-solid fa-trash-can mr-1"></i> Clear All
+          </button>
+        </div>
+        <div id="readerSavedList" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- ═══════ TRUYỆN CHÊM TAB ═══════ -->
+    <div id="tab-story" class="tab-content hidden">
+
+      <!-- Story Header -->
+      <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden mb-5">
+        <div class="p-5 space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+              <i class="fa-solid fa-book-open-reader text-white"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-bold text-gray-800">Truyện Chêm</h3>
+              <p class="text-xs text-gray-400">Đọc truyện chêm tiếng Anh — từ vựng được highlight tự động, hoặc luyện fill-in-the-blank</p>
+            </div>
+            <button onclick="toggleStoryWordBank()" class="text-xs text-purple-500 hover:text-purple-700 font-semibold transition px-3 py-1.5 rounded-lg hover:bg-purple-50 border border-purple-200" title="Show/hide word bank">
+              <i class="fa-solid fa-list-check mr-1"></i><span class="hidden sm:inline">Word Bank</span>
+            </button>
+          </div>
+
+          <!-- Fetch from kndict -->
+          <div class="bg-purple-50 border border-purple-100 rounded-xl p-4 space-y-3">
+            <p class="text-xs font-bold text-purple-700 uppercase tracking-wider"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Fetch Truyện Chêm từ kndict.com</p>
+            <div class="flex items-center gap-2">
+              <div class="flex-1 relative">
+                <i class="fa-solid fa-link absolute left-3 top-1/2 -translate-y-1/2 text-purple-300 text-sm"></i>
+                <input id="storyFetchUrl" type="url" value="https://kndict.com/truyen-chem/truyen-chem-tu-sang-tac" placeholder="kndict.com truyện chêm URL..."
+                  oninput="$('storyFetchPage').value=1"
+                  class="w-full pl-9 pr-3 py-2 rounded-lg border border-purple-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 transition"/>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <span class="text-xs text-purple-500 font-medium">Trang</span>
+                <input id="storyFetchPage" type="number" min="1" value="1"
+                  class="w-12 px-1.5 py-2 rounded-lg border border-purple-200 bg-white text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+                  title="Trang cần fetch" />
+              </div>
+              <button onclick="fetchStoryList()" id="storyFetchBtn" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-download"></i> Fetch
+              </button>
+            </div>
+            <div id="storyFetchStatus" class="hidden text-xs text-purple-500"></div>
+            <div id="storyFetchList" class="hidden max-h-52 overflow-y-auto space-y-1"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode tabs + Content area -->
+      <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
+        <div class="flex items-center gap-1 border-b border-surface-200 px-4 bg-surface-50 flex-wrap">
+          <button id="storyTabEdit" onclick="switchStoryMode('edit')" class="story-tab story-tab-active px-4 py-2.5 text-sm font-semibold transition">
+            <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
+          </button>
+          <button id="storyTabRead" onclick="switchStoryMode('read')" class="story-tab px-4 py-2.5 text-sm font-semibold transition">
+            <i class="fa-solid fa-book-open mr-1"></i>Read
+          </button>
+          <button id="storyTabQuiz" onclick="switchStoryMode('quiz')" class="story-tab px-4 py-2.5 text-sm font-semibold transition">
+            <i class="fa-solid fa-pen-clip mr-1"></i>Fill Blanks
+          </button>
+          <div class="ml-auto flex items-center gap-2 py-1">
+            <select id="storySavedSelect" onchange="loadSavedStory()" class="text-xs border border-surface-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-300 max-w-[10rem]">
+              <option value="">📁 Saved...</option>
+            </select>
+            <button onclick="saveCurrentStory()" class="text-xs text-purple-600 hover:text-purple-700 font-semibold transition" title="Save story"><i class="fa-solid fa-floppy-disk"></i></button>
+            <button onclick="deleteCurrentStory()" class="text-xs text-red-400 hover:text-red-600 font-semibold transition" title="Delete story"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+        <div class="flex" style="min-height:28rem">
+          <!-- Main panel -->
+          <div class="flex-1 flex flex-col min-w-0">
+            <!-- Edit mode -->
+            <div id="storyEditPanel" class="flex-1 flex flex-col p-4 gap-3">
+              <input id="storyTitleInput" type="text" placeholder="Story title..." class="w-full px-3 py-2 border border-surface-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-300"/>
+              <textarea id="storyTextInput" oninput="updateStoryWordCount()" rows="14" placeholder="Viết hoặc paste truyện chêm ở đây...&#10;&#10;Ví dụ: Hôm nay tôi có một appointment rất quan trọng với client. Therefore tôi đã phải thức dậy từ 5 giờ sáng..." class="w-full flex-1 px-3 py-2 border border-surface-200 rounded-lg text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="storyWordCount" class="text-xs text-gray-400">0 vocab words detected</span>
+                <button onclick="switchStoryMode('read')" class="ml-auto px-4 py-2 rounded-lg text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white transition">
+                  <i class="fa-solid fa-eye mr-1"></i> Preview
+                </button>
+              </div>
+            </div>
+            <!-- Read mode -->
+            <div id="storyReadPanel" class="hidden flex-1 p-5 overflow-y-auto">
+              <div id="storyRendered" class="story-rendered"></div>
+            </div>
+            <!-- Quiz mode -->
+            <div id="storyQuizPanel" class="hidden flex-1 flex flex-col">
+              <div id="storyQuizContent" class="flex-1 p-5 overflow-y-auto story-rendered"></div>
+              <div class="bg-surface-50 border-t border-surface-200 px-5 py-3 flex items-center justify-between">
+                <span id="storyQuizScore" class="text-sm font-semibold text-gray-500"></span>
+                <div class="flex items-center gap-2">
+                  <button onclick="revealStoryAnswers()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-purple-600 hover:bg-purple-50 border border-purple-200 transition">
+                    <i class="fa-solid fa-eye mr-1"></i> Reveal
+                  </button>
+                  <button onclick="checkStoryQuiz()" class="px-4 py-2 rounded-lg text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white transition">
+                    <i class="fa-solid fa-check mr-1"></i> Check
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Word bank sidebar -->
+          <div id="storyWordBank" class="hidden w-48 border-l border-surface-200 bg-surface-50 overflow-y-auto flex-shrink-0 p-3">
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"><i class="fa-solid fa-list-check mr-1"></i> Word Bank</p>
+            <p class="text-[0.65rem] text-gray-400 mb-2">Click a word to insert at cursor</p>
+            <div id="storyWordBankList" class="space-y-0.5"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="text-center py-6 text-xs text-gray-400">
+  Built with <i class="fa-solid fa-heart text-red-400"></i> for learners everywhere &mdash; Vocab Learner &copy; 2026
+</footer>
+
+<!-- ═══════════════════ SKIPPED WORDS MODAL ═══════════════════ -->
+<div id="skippedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+    <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex items-center justify-between">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-circle-check"></i> Known Words <span id="skippedCount" class="bg-white/20 text-sm px-2 py-0.5 rounded-full">0</span>
+      </h3>
+      <button onclick="closeSkippedModal()" class="text-white/80 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <div id="skippedList" class="p-4 max-h-80 overflow-y-auto divide-y divide-surface-100"></div>
+    <div class="bg-surface-50 px-6 py-4 flex items-center justify-between">
+      <button onclick="revertAllSkipped()"
+        class="text-xs text-red-500 hover:text-red-700 font-semibold transition">
+        <i class="fa-solid fa-rotate-left mr-1"></i> Restore All
+      </button>
+      <button onclick="closeSkippedModal()"
+        class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-surface-100 transition">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SETTINGS MODAL ═══════════════════ -->
+<div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-4 flex items-center justify-between">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-gear"></i> Auto-play Settings
+      </h3>
+      <button onclick="closeSettings()" class="text-white/80 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-6 space-y-5">
+      <div>
+        <label class="text-sm font-semibold text-gray-700 mb-2 block">
+          <i class="fa-solid fa-hourglass-half mr-1 text-brand-500"></i> Idle time before auto-flip
+        </label>
+        <div class="flex items-center gap-2">
+          <input id="settingsFlipMin" type="number" min="0" max="10" 
+            class="flex-1 px-4 py-2 border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300 text-center"
+            placeholder="Min"/>
+          <span class="text-gray-500 font-medium">min</span>
+          <input id="settingsFlipSec" type="number" min="0" max="59" 
+            class="flex-1 px-4 py-2 border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300 text-center"
+            placeholder="Sec"/>
+          <span class="text-gray-500 font-medium">sec</span>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">Card flips to show definition after this idle time</p>
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold text-gray-700 mb-2 block">
+          <i class="fa-solid fa-forward mr-1 text-brand-500"></i> Time before next card (after flip)
+        </label>
+        <div class="flex items-center gap-2">
+          <input id="settingsNextSec" type="number" min="5" max="120" 
+            class="flex-1 px-4 py-2 border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300 text-center"
+            placeholder="Seconds"/>
+          <span class="text-gray-500 font-medium">sec</span>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">Advances to next card after this delay</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-surface-50 px-6 py-4 flex items-center justify-end gap-3">
+      <button onclick="closeSettings()" 
+        class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-surface-100 transition">
+        Cancel
+      </button>
+      <button onclick="saveSettingsForm()" 
+        class="px-5 py-2 rounded-lg text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white transition">
+        <i class="fa-solid fa-floppy-disk mr-1"></i> Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ QUIZ REPORT MODAL ═══════════════════ -->
+<div id="reportModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
+    <div class="bg-gradient-to-r from-brand-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-chart-bar"></i> Quiz Reports
+      </h3>
+      <button onclick="closeReportModal()" class="text-white/80 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <div id="reportList" class="p-4 max-h-[28rem] overflow-y-auto space-y-3"></div>
+    <div class="bg-surface-50 px-6 py-4 flex items-center justify-between">
+      <button onclick="clearAllReports()" class="text-xs text-red-500 hover:text-red-700 font-semibold transition">
+        <i class="fa-solid fa-trash-can mr-1"></i> Clear All
+      </button>
+      <button onclick="closeReportModal()" class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-surface-100 transition">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- App Script -->
+<script src="vocab-learner.js"></script>
+
+<!-- ═══════════════════ ADD WORD MODAL ═══════════════════ -->
+<div id="addWordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden max-h-[90vh] flex flex-col">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 pt-4 pb-0 flex-shrink-0">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-plus-circle"></i> Add Words
+        </h3>
+        <button onclick="closeAddWordModal()" class="text-white/80 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <!-- Tab strip -->
+      <div class="flex gap-1" id="awTabStrip">
+        <button id="awTabManual" onclick="switchAddWordTab('manual')"
+          class="aw-tab aw-tab-active px-4 py-2 text-sm font-semibold rounded-t-lg transition">
+          <i class="fa-solid fa-pen mr-1.5"></i>Manual
+        </button>
+        <button id="awTabImport" onclick="switchAddWordTab('import')"
+          class="aw-tab px-4 py-2 text-sm font-semibold rounded-t-lg transition">
+          <i class="fa-solid fa-file-import mr-1.5"></i>Import &amp; Merge
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Manual panel ── -->
+    <div id="awManualPanel" class="p-5 space-y-3 overflow-y-auto">
+      <div>
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Word <span class="text-red-400">*</span></label>
+        <input id="awWord" type="text" class="w-full mt-1 px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300" placeholder="e.g. perseverance"/>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Definition <span class="text-red-400">*</span></label>
+        <input id="awDefinition" type="text" class="w-full mt-1 px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300" placeholder="e.g. continued effort to do something despite difficulty"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Phonetics</label>
+          <input id="awPhonetics" type="text" class="w-full mt-1 px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300" placeholder="/ˌpɜːrsəˈvɪrəns/"/>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Collocations</label>
+          <input id="awCollocations" type="text" class="w-full mt-1 px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300" placeholder="show perseverance"/>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Synonyms</label>
+          <input id="awSynonyms" type="text" class="w-full mt-1 px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300" placeholder="persistence, tenacity"/>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Antonyms</label>
+          <input id="awAntonyms" type="text" class="w-full mt-1 px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300" placeholder="laziness, apathy"/>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Context / Example</label>
+        <input id="awContext" type="text" class="w-full mt-1 px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300" placeholder="His perseverance paid off when he finally passed the exam."/>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Add to</label>
+        <div class="flex items-center gap-2 mt-1">
+          <select id="awTargetSet" class="flex-1 border border-surface-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300">
+            <option value="_current">Current vocabulary (learning)</option>
+          </select>
+          <button onclick="promptNewSet()" class="px-3 py-2 rounded-lg border border-dashed border-green-400 text-green-600 text-sm font-semibold hover:bg-green-50 transition" title="Create new set">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Import & Merge panel ── -->
+    <div id="awImportPanel" class="hidden p-5 overflow-y-auto flex flex-col gap-4">
+      <!-- Drop zone -->
+      <div id="awDropZone" class="aw-drop-zone flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed border-green-300 rounded-xl cursor-pointer text-center hover:border-green-500 hover:bg-green-50 transition"
+           onclick="document.getElementById('awMergeFileInput').click()"
+           ondragover="event.preventDefault();this.classList.add('aw-drop-hover')"
+           ondragleave="this.classList.remove('aw-drop-hover')"
+           ondrop="event.preventDefault();this.classList.remove('aw-drop-hover');handleMergeFileDrop(event)">
+        <i class="fa-solid fa-file-csv text-3xl text-green-400"></i>
+        <p class="text-sm font-semibold text-gray-600">Drop a CSV or Excel file here</p>
+        <p class="text-xs text-gray-400">or click to browse (.csv, .xlsx, .xls)</p>
+        <input id="awMergeFileInput" type="file" accept=".csv,.xlsx,.xls" class="hidden" onchange="handleMergeFileSelect(event)"/>
+      </div>
+      <!-- Preview card (hidden until file parsed) -->
+      <div id="awMergePreview" class="hidden aw-merge-preview rounded-xl border border-surface-200 bg-surface-50 p-4 space-y-3">
+        <div class="flex items-center gap-2 font-semibold text-sm text-gray-700">
+          <i class="fa-solid fa-file-lines text-green-500"></i>
+          <span id="awMergeFileName" class="truncate flex-1"></span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="aw-stat-card bg-blue-50 border border-blue-100 rounded-lg p-2">
+            <div id="awMergeTotalCount" class="text-lg font-bold text-blue-600">0</div>
+            <div class="text-xs text-blue-400 font-medium">In file</div>
+          </div>
+          <div class="aw-stat-card bg-amber-50 border border-amber-100 rounded-lg p-2">
+            <div id="awMergeDupCount" class="text-lg font-bold text-amber-500">0</div>
+            <div class="text-xs text-amber-400 font-medium">Duplicates</div>
+          </div>
+          <div class="aw-stat-card bg-green-50 border border-green-100 rounded-lg p-2">
+            <div id="awMergeNewCount" class="text-lg font-bold text-green-600">0</div>
+            <div class="text-xs text-green-400 font-medium">Will add</div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 text-center">Words already in your vocabulary are skipped.</p>
+      </div>
+    </div>
+
+    <!-- ── Manual footer ── -->
+    <div id="awManualFooter" class="bg-surface-50 px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <button onclick="clearAddWordForm()" class="text-xs text-gray-400 hover:text-gray-600 font-semibold transition">
+        <i class="fa-solid fa-eraser mr-1"></i> Clear
+      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="closeAddWordModal()" class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-surface-100 transition">Cancel</button>
+        <button onclick="saveAddWord()" class="px-5 py-2 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-700 text-white transition">
+          <i class="fa-solid fa-plus mr-1"></i> Add Word
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Import footer ── -->
+    <div id="awImportFooter" class="hidden bg-surface-50 px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <button onclick="resetMergePanel()" class="text-xs text-gray-400 hover:text-gray-600 font-semibold transition">
+        <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="closeAddWordModal()" class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-surface-100 transition">Cancel</button>
+        <button id="awConfirmMergeBtn" onclick="confirmMergeImport()" disabled
+          class="px-5 py-2 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-700 text-white transition disabled:opacity-40 disabled:cursor-not-allowed">
+          <i class="fa-solid fa-code-merge mr-1"></i> Merge
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Story word tooltip (fixed, outside tab) -->
+<div id="storyTooltip" class="hidden" style="position:fixed;z-index:60"></div>
+
+<!-- ═══════════════════ DAILY GOAL MODAL ═══════════════════ -->
+<div id="dailyGoalModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 text-center">
+      <div class="w-14 h-14 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
+        <i class="fa-solid fa-bullseye text-white text-2xl"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white">Daily Goal</h3>
+      <p id="goalDateLabel" class="text-xs text-white/70 mt-1"></p>
+    </div>
+    <!-- Goal Setup (shown when no goal set today) -->
+    <div id="goalSetupPanel" class="p-5 space-y-4">
+      <p class="text-sm text-gray-500 text-center">Set your targets for today</p>
+      <div class="space-y-3">
+        <!-- Flashcards goal -->
+        <label class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
+          <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-clone text-blue-500"></i>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-700">Flashcards</div>
+            <div class="text-xs text-gray-400">Words to review</div>
+          </div>
+          <input id="goalFlashcards" type="number" min="0" max="500" value="10"
+            class="w-16 px-2 py-1.5 rounded-lg border border-blue-200 text-center text-sm font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"/>
+        </label>
+        <!-- Quiz goal -->
+        <label class="flex items-center gap-3 p-3 bg-purple-50 rounded-xl">
+          <div class="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-gamepad text-purple-500"></i>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-700">Quiz</div>
+            <div class="text-xs text-gray-400">Questions to answer</div>
+          </div>
+          <input id="goalQuiz" type="number" min="0" max="500" value="10"
+            class="w-16 px-2 py-1.5 rounded-lg border border-purple-200 text-center text-sm font-bold text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-300"/>
+        </label>
+        <!-- Reading goal -->
+        <label class="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
+          <div class="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-book-open text-green-500"></i>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-700">Reading</div>
+            <div class="text-xs text-gray-400">Stories / articles to read</div>
+          </div>
+          <input id="goalReading" type="number" min="0" max="50" value="1"
+            class="w-16 px-2 py-1.5 rounded-lg border border-green-200 text-center text-sm font-bold text-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"/>
+        </label>
+      </div>
+      <button onclick="saveDailyGoal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm hover:from-amber-600 hover:to-orange-600 transition shadow-md">
+        <i class="fa-solid fa-rocket mr-1"></i> Start Today's Journey!
+      </button>
+      <button onclick="skipDailyGoal()" class="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition">Skip for today</button>
+    </div>
+    <!-- Goal Progress (shown when goal already set) -->
+    <div id="goalProgressPanel" class="hidden p-5 space-y-4">
+      <div class="space-y-3" id="goalProgressItems"></div>
+      <div id="goalOverallBar" class="mt-2">
+        <div class="flex justify-between text-xs text-gray-500 mb-1">
+          <span>Overall</span>
+          <span id="goalOverallPct">0%</span>
+        </div>
+        <div class="w-full h-2.5 bg-surface-100 rounded-full overflow-hidden">
+          <div id="goalOverallFill" class="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500" style="width:0%"></div>
+        </div>
+      </div>
+      <button onclick="closeDailyGoalModal()" class="w-full py-2.5 rounded-xl bg-surface-100 hover:bg-surface-200 text-gray-600 font-semibold text-sm transition">
+        <i class="fa-solid fa-xmark mr-1"></i> Close
+      </button>
+      <button onclick="resetDailyGoal()" class="w-full py-2 text-xs text-gray-400 hover:text-red-500 transition">
+        <i class="fa-solid fa-rotate-left mr-1"></i> Reset today's goal
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ DAILY GOAL COMPLETION CELEBRATION ═══════════════════ -->
+<div id="goalCelebration" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden text-center">
+    <div class="bg-gradient-to-br from-green-400 to-emerald-600 px-6 py-8">
+      <div class="text-6xl mb-3">🎉</div>
+      <h2 class="text-2xl font-extrabold text-white mb-1">Congratulations!</h2>
+      <p class="text-sm text-white/80">You've completed all your daily goals!</p>
+    </div>
+    <div class="p-5 space-y-3">
+      <div id="celebrationStats" class="text-sm text-gray-600"></div>
+      <div class="flex items-center justify-center gap-1 text-amber-500">
+        <i class="fa-solid fa-fire text-lg"></i>
+        <span id="celebrationStreak" class="font-bold text-lg"></span>
+      </div>
+      <button onclick="closeCelebration()" class="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-sm hover:from-green-600 hover:to-emerald-700 transition shadow-md">
+        <i class="fa-solid fa-hand-peace mr-1"></i> Awesome!
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ CUSTOM SETS MODAL ═══════════════════ -->
+<div id="customSetsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden max-h-[90vh] flex flex-col">
+    <div class="bg-gradient-to-r from-brand-600 to-indigo-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-folder-open"></i> Word Sets
+      </h3>
+      <button onclick="closeCustomSetsModal()" class="text-white/80 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <div id="customSetsList" class="p-4 overflow-y-auto space-y-2"></div>
+    <div class="bg-surface-50 px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <button onclick="createNewSetPrompt()" class="text-sm text-green-600 hover:text-green-700 font-semibold transition">
+        <i class="fa-solid fa-plus mr-1"></i> New Set
+      </button>
+      <button onclick="closeCustomSetsModal()" class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-surface-100 transition">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ FAB — DICTIONARY / TRANSLATE ═══════════════════ -->
+<button id="dictFab" onclick="toggleDictPanel()" title="Dictionary & Translate">
+  <i class="fa-solid fa-language"></i>
+</button>
+
+<div id="dictPanel" class="dict-panel hidden">
+  <!-- Header -->
+  <div class="dict-panel-header">
+    <div class="dict-panel-tabs">
+      <button id="dictModeWord" class="dict-mode-btn active" onclick="setDictMode('word')">
+        <i class="fa-solid fa-book-open mr-1"></i> Tra từ
+      </button>
+      <button id="dictModeTranslate" class="dict-mode-btn" onclick="setDictMode('translate')">
+        <i class="fa-solid fa-language mr-1"></i> Dịch câu
+      </button>
+    </div>
+    <button onclick="toggleDictPanel()" class="dict-close-btn">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- Word Lookup Mode -->
+  <div id="dictWordMode" class="dict-mode-content">
+    <div class="dict-input-row">
+      <input id="dictWordInput" type="text" placeholder="Type an English word…" autocomplete="off"
+        onkeydown="if(event.key==='Enter') lookupWord()" />
+      <button onclick="lookupWord()" class="dict-search-btn">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+    </div>
+    <div id="dictWordResult" class="dict-result-area">
+      <div class="dict-placeholder">
+        <i class="fa-solid fa-spell-check text-2xl text-gray-300 mb-2"></i>
+        <p class="text-xs text-gray-400">Nhập từ tiếng Anh để tra nghĩa, phiên âm, ví dụ</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Translate Mode -->
+  <div id="dictTranslateMode" class="dict-mode-content hidden">
+    <div class="dict-lang-row">
+      <span id="dictLangFrom" class="dict-lang-label">English</span>
+      <button onclick="swapDictLang()" class="dict-swap-btn" title="Swap languages">
+        <i class="fa-solid fa-right-left"></i>
+      </button>
+      <span id="dictLangTo" class="dict-lang-label">Tiếng Việt</span>
+    </div>
+    <textarea id="dictTranslateInput" rows="3" placeholder="Nhập câu cần dịch…"></textarea>
+    <button onclick="translateSentence()" class="dict-translate-go-btn">
+      <i class="fa-solid fa-paper-plane mr-1"></i> Dịch
+    </button>
+    <div id="dictTranslateResult" class="dict-result-area">
+      <div class="dict-placeholder">
+        <i class="fa-solid fa-comments text-2xl text-gray-300 mb-2"></i>
+        <p class="text-xs text-gray-400">Kết quả dịch sẽ hiện ở đây</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ FLOATING GOAL WIDGET ═══════════════════ -->
+<div id="goalWidget" class="hidden goal-widget" onclick="openDailyGoalModal()" title="Daily Goal — click to view details">
+  <div class="goal-widget-header">
+    <i class="fa-solid fa-bullseye" style="color:#f59e0b;font-size:0.75rem"></i>
+    <span>Daily Goal</span>
+  </div>
+  <div id="goalWidgetInner" class="goal-widget-body"></div>
+</div>
+
+</body>
+</html>
+
+​​

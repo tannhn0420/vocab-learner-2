@@ -1,0 +1,1488 @@
+​​/* ═══════════════════════════════════════════════════════════
+  VOCAB LEARNER — Stylesheet
+  ═══════════════════════════════════════════════════════════ */
+
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+
+/* ── Base ────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+ font-family: 'Inter', system-ui, sans-serif;
+ background: #f0f4f8;
+ color: #1e293b;
+ min-height: 100vh;
+}
+
+
+/* ── Flashcard 3‑D Flip ─────────────────────────────────── */
+.perspective { perspective: 1200px; }
+.card-inner {
+ position: relative; width: 100%; height: 100%;
+ transition: transform 0.6s cubic-bezier(.4,.2,.2,1);
+ transform-style: preserve-3d;
+}
+.card-inner.flipped { transform: rotateY(180deg); }
+.card-face {
+ position: absolute; inset: 0; backface-visibility: hidden;
+ border-radius: 1rem; overflow: auto;
+}
+.card-back { transform: rotateY(180deg); }
+
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 999px; }
+
+
+/* ── Quiz Answer Buttons ─────────────────────────────────── */
+.answer-btn { transition: all .25s ease; }
+.answer-btn:hover:not(.disabled) {
+ transform: translateY(-2px);
+ box-shadow: 0 4px 12px rgba(0,0,0,.1);
+}
+.answer-btn.correct  { background: #22c55e !important; color: #fff !important; border-color: #16a34a !important; }
+.answer-btn.wrong    { background: #ef4444 !important; color: #fff !important; border-color: #dc2626 !important; }
+.answer-btn.disabled { pointer-events: none; opacity: .7; }
+.answer-btn.reveal-correct { border-color: #22c55e !important; background: #f0fdf4 !important; }
+
+
+/* ── Toast ────────────────────────────────────────────────── */
+.toast {
+ position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000;
+ padding: .75rem 1.25rem; border-radius: .75rem;
+ font-weight: 500; font-size: .875rem;
+ box-shadow: 0 8px 30px rgba(0,0,0,.12);
+ animation: slideIn .35s ease forwards, fadeOut .4s ease 2.8s forwards;
+}
+@keyframes slideIn {
+ from { transform: translateX(120%); opacity: 0; }
+ to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOut {
+ to { transform: translateY(-10px); opacity: 0; }
+}
+
+
+/* ── Progress Ring ───────────────────────────────────────── */
+.progress-ring__circle {
+ transition: stroke-dashoffset 0.5s ease;
+ transform: rotate(-90deg);
+ transform-origin: 50% 50%;
+}
+
+
+/* ── Tab Underline ───────────────────────────────────────── */
+.tab-btn { position: relative; }
+.tab-btn::after {
+ content: ''; position: absolute; left: 50%; bottom: -.25rem;
+ width: 0; height: 3px; background: #3b82f6; border-radius: 999px;
+ transition: all .3s ease; transform: translateX(-50%);
+}
+.tab-btn.active::after { width: 70%; }
+.tab-btn.active { color: #2563eb; }
+
+
+/* ── Upload Area ─────────────────────────────────────────── */
+.upload-area {
+ border: 2px dashed #93c5fd;
+ transition: all .3s ease;
+}
+.upload-area:hover,
+.upload-area.dragover {
+ border-color: #3b82f6;
+ background: #eff6ff;
+}
+
+
+/* ── Fade In ─────────────────────────────────────────────── */
+.fade-in { animation: fadein .4s ease forwards; }
+@keyframes fadein {
+ from { opacity: 0; transform: translateY(12px); }
+ to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+  NEW — Audio / SRS / Advanced Quiz
+  ═══════════════════════════════════════════════════════════ */
+
+
+/* ── Speaker Button ──────────────────────────────────────── */
+.speaker-btn {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ width: 2.5rem;
+ height: 2.5rem;
+ border-radius: 50%;
+ background: transparent;
+ border: 1.5px solid #bfdbfe;
+ color: #3b82f6;
+ cursor: pointer;
+ transition: all 0.2s ease;
+ font-size: 0.875rem;
+ flex-shrink: 0;
+}
+.speaker-btn:hover {
+ background: #eff6ff;
+ border-color: #3b82f6;
+ transform: scale(1.1);
+}
+.speaker-btn.speaking {
+ animation: pulse-speak 0.8s ease infinite;
+ border-color: #3b82f6;
+ background: #eff6ff;
+}
+@keyframes pulse-speak {
+ 0%, 100% { transform: scale(1); }
+ 50%      { transform: scale(1.15); }
+}
+
+
+.speaker-btn-sm {
+ width: 1.625rem;
+ height: 1.625rem;
+ font-size: 0.6rem;
+ border-width: 1px;
+}
+
+
+.speaker-btn-light {
+ border-color: rgba(255,255,255,0.35);
+ color: rgba(255,255,255,0.9);
+}
+.speaker-btn-light:hover {
+ background: rgba(255,255,255,0.15);
+ border-color: rgba(255,255,255,0.6);
+ color: #fff;
+}
+.speaker-btn-light.speaking {
+ background: rgba(255,255,255,0.15);
+ border-color: rgba(255,255,255,0.6);
+}
+
+
+/* ── SRS Level Badge ─────────────────────────────────────── */
+.srs-badge {
+ display: inline-flex;
+ align-items: center;
+ gap: 4px;
+ font-size: 0.65rem;
+ font-weight: 700;
+ padding: 2px 8px;
+ border-radius: 999px;
+ letter-spacing: 0.02em;
+ white-space: nowrap;
+}
+.srs-0 { background: #fef2f2; color: #dc2626; }
+.srs-1 { background: #fff7ed; color: #ea580c; }
+.srs-2 { background: #fffbeb; color: #d97706; }
+.srs-3 { background: #ecfdf5; color: #059669; }
+.srs-4 { background: #eff6ff; color: #2563eb; }
+.srs-5 { background: #f5f3ff; color: #7c3aed; }
+
+
+/* ── Quiz Text Input ─────────────────────────────────────── */
+.quiz-text-input {
+ width: 100%;
+ padding: 0.875rem 1rem;
+ border-radius: 0.75rem;
+ border: 2px solid #e2e8f0;
+ background: #f8fafc;
+ font-size: 1rem;
+ font-weight: 500;
+ text-align: center;
+ transition: all 0.2s ease;
+ outline: none;
+}
+.quiz-text-input:focus {
+ border-color: #3b82f6;
+ background: #fff;
+ box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+.quiz-text-input.correct-input {
+ border-color: #22c55e;
+ background: #f0fdf4;
+ color: #15803d;
+}
+.quiz-text-input.wrong-input {
+ border-color: #ef4444;
+ background: #fef2f2;
+ color: #dc2626;
+}
+.quiz-text-input:disabled {
+ opacity: 0.7;
+ cursor: not-allowed;
+}
+
+
+/* ── Quiz Text Feedback ──────────────────────────────────── */
+.quiz-text-feedback {
+ padding: 0.75rem 1rem;
+ border-radius: 0.75rem;
+ font-weight: 500;
+ font-size: 0.875rem;
+ text-align: center;
+}
+.quiz-text-feedback.correct-feedback {
+ background: #f0fdf4;
+ color: #15803d;
+ border: 1px solid #bbf7d0;
+}
+.quiz-text-feedback.wrong-feedback {
+ background: #fef2f2;
+ color: #dc2626;
+ border: 1px solid #fecaca;
+}
+
+
+/* ── Cloze Blank ─────────────────────────────────────────── */
+.cloze-blank {
+ display: inline-block;
+ min-width: 5rem;
+ border-bottom: 2.5px solid #3b82f6;
+ color: #3b82f6;
+ font-weight: 700;
+ text-align: center;
+ padding: 0 4px;
+ margin: 0 2px;
+ letter-spacing: 0.1em;
+}
+
+
+/* ── Mode Badge ──────────────────────────────────────────── */
+.mode-badge {
+ display: inline-flex;
+ align-items: center;
+ gap: 4px;
+ font-size: 0.625rem;
+ font-weight: 700;
+ padding: 3px 10px;
+ border-radius: 999px;
+ background: #eff6ff;
+ color: #2563eb;
+ text-transform: uppercase;
+ letter-spacing: 0.06em;
+ white-space: nowrap;
+}
+
+
+/* ── Quiz Mode Chips (Multi-Select) ──────────────────────── */
+.quiz-mode-chip {
+ display: inline-flex;
+ align-items: center;
+ gap: 0.25rem;
+ padding: 0.375rem 0.75rem;
+ border-radius: 9999px;
+ border: 2px solid #e2e8f0;
+ font-size: 0.75rem;
+ font-weight: 600;
+ color: #94a3b8;
+ background: #fff;
+ cursor: pointer;
+ transition: all 0.2s ease;
+ user-select: none;
+}
+.quiz-mode-chip:hover {
+ border-color: #93c5fd;
+ color: #64748b;
+}
+.quiz-mode-chip.active {
+ border-color: #3b82f6;
+ background: #eff6ff;
+ color: #1d4ed8;
+ box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+
+
+/* ── Context Reinforcement Card ──────────────────────────── */
+.context-reinforce {
+ background: #f0fdf4;
+ border: 1px solid #bbf7d0;
+ border-radius: 0.75rem;
+ padding: 0.875rem 1rem;
+ animation: explain-slide 0.35s ease-out;
+}
+.ctx-field {
+ display: flex;
+ gap: 0.5rem;
+ align-items: baseline;
+ padding: 0.25rem 0;
+ font-size: 0.8125rem;
+}
+.ctx-label {
+ flex-shrink: 0;
+ font-weight: 600;
+ font-size: 0.6875rem;
+ text-transform: uppercase;
+ letter-spacing: 0.03em;
+ color: #16a34a;
+ min-width: 5.5rem;
+}
+.ctx-field > span:last-child {
+ color: #374151;
+}
+
+
+/* ── Auto-play Toggle ────────────────────────────────────── */
+.auto-play-btn.auto-play-active {
+ background: #eff6ff;
+ border-color: #3b82f6;
+ color: #2563eb;
+ box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+/* ── Modals ──────────────────────────────────────────────────────── */
+#settingsModal, #skippedModal, #reportModal {
+ animation: fadeIn 0.2s ease;
+}
+#settingsModal > div, #skippedModal > div, #reportModal > div {
+ animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+ from { opacity: 0; transform: translateY(20px); }
+ to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ── Quiz Range Inputs ──────────────────────────────────────────── */
+#quizRangeFrom, #quizRangeTo {
+ -moz-appearance: textfield;
+}
+#quizRangeFrom::-webkit-inner-spin-button,
+#quizRangeFrom::-webkit-outer-spin-button,
+#quizRangeTo::-webkit-inner-spin-button,
+#quizRangeTo::-webkit-outer-spin-button {
+ opacity: 1;
+}
+
+
+/* ── Explain Answer Panel ───────────────────────────────────────── */
+.explain-panel {
+ background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+ border: 1px solid #fcd34d;
+ border-radius: 1rem;
+ padding: 1.25rem;
+ animation: explain-slide 0.35s ease-out;
+}
+@keyframes explain-slide {
+ from { opacity: 0; transform: translateY(10px); }
+ to   { opacity: 1; transform: translateY(0); }
+}
+.explain-header {
+ display: flex;
+ align-items: center;
+ gap: 0.5rem;
+ margin-bottom: 0.75rem;
+ flex-wrap: wrap;
+}
+.explain-word {
+ font-size: 1.5rem;
+ font-weight: 800;
+ color: #1e40af;
+ margin-bottom: 0.5rem;
+}
+.explain-phonetics {
+ font-size: 0.875rem;
+ color: #6366f1;
+ font-weight: 500;
+ margin-left: 0.5rem;
+}
+.explain-field {
+ display: flex;
+ flex-direction: column;
+ gap: 0.125rem;
+ padding: 0.5rem 0;
+ border-top: 1px solid rgba(252, 211, 77, 0.5);
+}
+.explain-label {
+ font-size: 0.7rem;
+ text-transform: uppercase;
+ letter-spacing: 0.05em;
+ font-weight: 700;
+ color: #92400e;
+}
+.explain-field > span:last-child {
+ font-size: 0.875rem;
+ color: #374151;
+ line-height: 1.5;
+}
+
+
+/* ── Mistake Type Badges ────────────────────────────────────────── */
+.mistake-badge {
+ font-size: 0.65rem;
+ font-weight: 700;
+ padding: 0.2rem 0.6rem;
+ border-radius: 9999px;
+ display: inline-flex;
+ align-items: center;
+ gap: 0.25rem;
+ margin-left: auto;
+}
+.mistake-gray   { background: #f3f4f6; color: #6b7280; }
+.mistake-purple { background: #f3e8ff; color: #7c3aed; }
+.mistake-blue   { background: #dbeafe; color: #2563eb; }
+.mistake-indigo { background: #e0e7ff; color: #4f46e5; }
+.mistake-orange { background: #fff7ed; color: #ea580c; }
+.mistake-pink   { background: #fce7f3; color: #db2777; }
+.mistake-amber  { background: #fffbeb; color: #d97706; }
+
+
+/* ── Smart Session Timer ────────────────────────────────────────── */
+.timer-warning {
+ animation: timer-pulse 1s ease-in-out infinite;
+}
+@keyframes timer-pulse {
+ 0%, 100% { opacity: 1; }
+ 50% { opacity: 0.5; transform: scale(1.05); }
+}
+
+
+/* ── Mistake Insights in Summary ────────────────────────────────── */
+.insight-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+ gap: 0.5rem;
+}
+.insight-card {
+ background: white;
+ border: 1px solid #e5e7eb;
+ border-radius: 0.75rem;
+ padding: 0.75rem;
+ text-align: center;
+ transition: all 0.2s;
+}
+.insight-card:hover {
+ border-color: #a78bfa;
+ box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.insight-count {
+ font-size: 1.25rem;
+ font-weight: 800;
+}
+.insight-label {
+ font-size: 0.65rem;
+ color: #6b7280;
+ margin-top: 0.25rem;
+}
+
+
+/* ── Summary Explain Accordion ──────────────────────────────────── */
+.summary-explain-detail {
+ background: #fffbeb;
+ border: 1px solid #fcd34d;
+ border-radius: 0.75rem;
+ padding: 0.75rem;
+ margin-top: 0.5rem;
+ font-size: 0.8rem;
+ color: #374151;
+}
+.summary-explain-detail .explain-field {
+ padding: 0.25rem 0;
+}
+
+
+/* ── Custom Sets Badge Colors ───────────────────────────────────── */
+.set-card {
+ background: white;
+ border: 1px solid #e2e8f0;
+ border-radius: 0.75rem;
+ padding: 1rem;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 0.75rem;
+ transition: all 0.2s;
+}
+.set-card:hover {
+ border-color: #93c5fd;
+ box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.set-card .set-info {
+ display: flex;
+ flex-direction: column;
+ gap: 0.125rem;
+ min-width: 0;
+ flex: 1;
+}
+.set-card .set-name {
+ font-weight: 700;
+ font-size: 0.875rem;
+ color: #1e293b;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+.set-card .set-meta {
+ font-size: 0.7rem;
+ color: #94a3b8;
+}
+.set-actions {
+ display: flex;
+ gap: 0.25rem;
+ flex-shrink: 0;
+}
+.set-actions button {
+ padding: 0.375rem 0.5rem;
+ border-radius: 0.5rem;
+ font-size: 0.7rem;
+ font-weight: 600;
+ transition: all 0.15s;
+}
+
+
+/* ── Export Dropdown ─────────────────────────────────────────────── */
+#exportDropdown {
+ animation: dropdown-in 0.15s ease-out;
+}
+@keyframes dropdown-in {
+ from { opacity: 0; transform: translateY(-4px); }
+ to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+  READER TAB — VOA Article Reader
+  ═══════════════════════════════════════════════════════════ */
+
+
+/* ── Category Buttons ─────────────────────────────────────── */
+.reader-cat-btn {
+ display: inline-flex;
+ align-items: center;
+ font-size: 0.75rem;
+ font-weight: 600;
+ padding: 0.35rem 0.85rem;
+ border-radius: 999px;
+ border: 1px solid #e2e8f0;
+ background: white;
+ color: #64748b;
+ cursor: pointer;
+ transition: all 0.2s;
+}
+.reader-cat-btn:hover {
+ border-color: #10b981;
+ color: #059669;
+ background: #ecfdf5;
+}
+.reader-cat-btn.active {
+ border-color: #10b981;
+ background: #ecfdf5;
+ color: #059669;
+}
+
+
+/* ── Article Cards ────────────────────────────────────────── */
+.reader-article-card {
+ background: white;
+ border: 1px solid #e2e8f0;
+ border-radius: 0.75rem;
+ padding: 1rem 1.25rem;
+ display: flex;
+ align-items: flex-start;
+ gap: 1rem;
+ cursor: pointer;
+ transition: all 0.2s;
+}
+.reader-article-card:hover {
+ border-color: #6ee7b7;
+ box-shadow: 0 2px 12px rgba(16,185,129,0.08);
+ transform: translateY(-1px);
+}
+.reader-article-card .article-thumb {
+ width: 72px;
+ height: 72px;
+ border-radius: 0.5rem;
+ object-fit: cover;
+ flex-shrink: 0;
+ background: #f1f5f9;
+}
+.reader-article-card .article-info {
+ flex: 1;
+ min-width: 0;
+}
+.reader-article-card .article-title {
+ font-weight: 700;
+ font-size: 0.9rem;
+ color: #1e293b;
+ line-height: 1.35;
+ display: -webkit-box;
+ -webkit-line-clamp: 2;
+ -webkit-box-orient: vertical;
+ overflow: hidden;
+}
+.reader-article-card .article-excerpt {
+ font-size: 0.8rem;
+ color: #64748b;
+ margin-top: 0.25rem;
+ display: -webkit-box;
+ -webkit-line-clamp: 2;
+ -webkit-box-orient: vertical;
+ overflow: hidden;
+}
+.reader-article-card .article-meta {
+ font-size: 0.65rem;
+ color: #94a3b8;
+ margin-top: 0.35rem;
+}
+.reader-article-card .article-vocab-badge {
+ display: inline-flex;
+ align-items: center;
+ gap: 3px;
+ font-size: 0.6rem;
+ font-weight: 700;
+ padding: 2px 8px;
+ border-radius: 999px;
+ background: #ecfdf5;
+ color: #059669;
+ margin-left: 0.5rem;
+}
+
+
+/* ── Reader Body ──────────────────────────────────────────── */
+.reader-body {
+ font-size: 1.05rem;
+ line-height: 1.9;
+ color: #374151;
+}
+.reader-body p {
+ margin-bottom: 1.25rem;
+}
+
+
+/* ── Vocab Word Highlighting ─────────────────────────────── */
+.reader-vocab-word {
+ background: linear-gradient(120deg, #d1fae5 0%, #a7f3d0 100%);
+ padding: 1px 5px;
+ border-radius: 4px;
+ font-weight: 600;
+ color: #065f46;
+ cursor: pointer;
+ transition: all 0.2s ease;
+ text-decoration: underline;
+ text-decoration-color: #6ee7b7;
+ text-underline-offset: 2px;
+ position: relative;
+}
+.reader-vocab-word:hover {
+ background: linear-gradient(120deg, #a7f3d0 0%, #6ee7b7 100%);
+ transform: translateY(-1px);
+}
+
+
+/* ── Vocab Tooltip ───────────────────────────────────────── */
+.reader-vocab-tooltip {
+ position: absolute;
+ bottom: calc(100% + 8px);
+ left: 50%;
+ transform: translateX(-50%);
+ background: #064e3b;
+ color: white;
+ padding: 0.75rem 1rem;
+ border-radius: 0.75rem;
+ font-size: 0.8rem;
+ line-height: 1.4;
+ min-width: 220px;
+ max-width: 320px;
+ box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+ z-index: 100;
+ pointer-events: none;
+ animation: reader-tt-in 0.2s ease;
+}
+.reader-vocab-tooltip::after {
+ content: '';
+ position: absolute;
+ top: 100%;
+ left: 50%;
+ transform: translateX(-50%);
+ border: 6px solid transparent;
+ border-top-color: #064e3b;
+}
+@keyframes reader-tt-in {
+ from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+ to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.reader-vocab-tooltip .rtt-word {
+ font-weight: 800;
+ font-size: 0.95rem;
+ color: #6ee7b7;
+}
+.reader-vocab-tooltip .rtt-phonetics {
+ font-size: 0.7rem;
+ color: #a7f3d0;
+ margin-left: 0.35rem;
+}
+.reader-vocab-tooltip .rtt-def {
+ margin-top: 0.35rem;
+ color: #e5e7eb;
+}
+.reader-vocab-tooltip .rtt-srs {
+ margin-top: 0.35rem;
+}
+
+
+/* ── Paragraph Translation ───────────────────────────────── */
+.reader-para-vi {
+ display: block;
+ margin-top: 0.5rem;
+ padding: 0.6rem 0.85rem;
+ background: #f0fdf4;
+ border-left: 3px solid #6ee7b7;
+ border-radius: 0 0.5rem 0.5rem 0;
+ font-size: 0.9rem;
+ color: #047857;
+ font-style: italic;
+ line-height: 1.6;
+}
+.reader-para-vi.hidden { display: none; }
+
+
+/* ── Loading Spinner ─────────────────────────────────────── */
+.reader-loading-spinner {
+ width: 40px;
+ height: 40px;
+ border: 3px solid #e2e8f0;
+ border-top-color: #10b981;
+ border-radius: 50%;
+ animation: reader-spin 0.8s linear infinite;
+}
+@keyframes reader-spin {
+ to { transform: rotate(360deg); }
+}
+
+
+/* ── Saved Article Cards ─────────────────────────────────── */
+.saved-article-card {
+ background: white;
+ border: 1px solid #e2e8f0;
+ border-radius: 0.75rem;
+ padding: 0.875rem 1rem;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 0.75rem;
+ transition: all 0.2s;
+ cursor: pointer;
+}
+.saved-article-card:hover {
+ border-color: #6ee7b7;
+ box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+}
+
+
+/* ── Translate Button per Paragraph ──────────────────────── */
+.reader-translate-btn {
+ display: inline-flex;
+ align-items: center;
+ gap: 4px;
+ font-size: 0.65rem;
+ font-weight: 600;
+ padding: 2px 8px;
+ border-radius: 999px;
+ border: 1px solid #d1fae5;
+ background: #ecfdf5;
+ color: #059669;
+ cursor: pointer;
+ transition: all 0.15s;
+ margin-left: 4px;
+ vertical-align: middle;
+}
+.reader-translate-btn:hover {
+ background: #d1fae5;
+ border-color: #6ee7b7;
+}
+
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  FAB — DICTIONARY / TRANSLATE PANEL                        */
+/* ═══════════════════════════════════════════════════════════ */
+
+
+/* ── Floating Action Button ── */
+#dictFab {
+ position: fixed;
+ bottom: 1.5rem;
+ right: 1.5rem;
+ z-index: 900;
+ width: 3.25rem;
+ height: 3.25rem;
+ border-radius: 50%;
+ border: none;
+ background: linear-gradient(135deg, #3b82f6, #6366f1);
+ color: #fff;
+ font-size: 1.25rem;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+ cursor: pointer;
+ transition: transform 0.2s, box-shadow 0.2s;
+}
+#dictFab:hover {
+ transform: scale(1.1);
+ box-shadow: 0 6px 24px rgba(99,102,241,0.45);
+}
+#dictFab.fab-open {
+ background: linear-gradient(135deg, #ef4444, #f87171);
+ box-shadow: 0 4px 16px rgba(239,68,68,0.35);
+}
+
+
+/* ── Panel ── */
+.dict-panel {
+ position: fixed;
+ bottom: 5.5rem;
+ right: 1.5rem;
+ z-index: 901;
+ width: 380px;
+ max-width: calc(100vw - 2rem);
+ max-height: calc(100vh - 8rem);
+ background: #fff;
+ border-radius: 1.25rem;
+ box-shadow: 0 12px 48px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+ display: flex;
+ flex-direction: column;
+ overflow: hidden;
+ animation: dictSlideUp 0.25s ease-out;
+}
+@keyframes dictSlideUp {
+ from { opacity: 0; transform: translateY(16px); }
+ to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ── Panel Header ── */
+.dict-panel-header {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ padding: 0.75rem 1rem;
+ border-bottom: 1px solid #e2e8f0;
+ background: #f8fafc;
+ flex-shrink: 0;
+}
+.dict-panel-tabs {
+ display: flex;
+ gap: 0.25rem;
+ background: #e2e8f0;
+ border-radius: 0.5rem;
+ padding: 2px;
+}
+.dict-mode-btn {
+ padding: 0.35rem 0.75rem;
+ font-size: 0.75rem;
+ font-weight: 600;
+ border: none;
+ border-radius: 0.4rem;
+ background: transparent;
+ color: #64748b;
+ cursor: pointer;
+ transition: all 0.15s;
+}
+.dict-mode-btn.active {
+ background: #fff;
+ color: #3b82f6;
+ box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.dict-close-btn {
+ width: 1.75rem;
+ height: 1.75rem;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ border: none;
+ background: transparent;
+ color: #94a3b8;
+ font-size: 0.9rem;
+ border-radius: 0.375rem;
+ cursor: pointer;
+ transition: all 0.15s;
+}
+.dict-close-btn:hover {
+ background: #fee2e2;
+ color: #ef4444;
+}
+
+
+/* ── Mode Content ── */
+.dict-mode-content {
+ padding: 1rem;
+ display: flex;
+ flex-direction: column;
+ gap: 0.75rem;
+ overflow-y: auto;
+ flex: 1;
+ min-height: 0;
+}
+
+
+/* ── Input Row (word lookup) ── */
+.dict-input-row {
+ display: flex;
+ gap: 0.5rem;
+}
+.dict-input-row input {
+ flex: 1;
+ padding: 0.6rem 0.85rem;
+ border: 1.5px solid #e2e8f0;
+ border-radius: 0.75rem;
+ font-size: 0.85rem;
+ outline: none;
+ transition: border-color 0.15s;
+}
+.dict-input-row input:focus {
+ border-color: #3b82f6;
+}
+.dict-search-btn {
+ width: 2.5rem;
+ height: 2.5rem;
+ border: none;
+ border-radius: 0.75rem;
+ background: linear-gradient(135deg, #3b82f6, #6366f1);
+ color: #fff;
+ font-size: 0.85rem;
+ cursor: pointer;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ transition: opacity 0.15s;
+ flex-shrink: 0;
+}
+.dict-search-btn:hover { opacity: 0.85; }
+
+
+/* ── Result Area ── */
+.dict-result-area {
+ flex: 1;
+ overflow-y: auto;
+ max-height: 340px;
+ min-height: 80px;
+}
+.dict-placeholder {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ padding: 2rem 1rem;
+ text-align: center;
+}
+
+
+/* ── Word Result Card ── */
+.dict-word-card {
+ background: #f8fafc;
+ border-radius: 0.75rem;
+ border: 1px solid #e2e8f0;
+ padding: 1rem;
+}
+.dict-word-header {
+ display: flex;
+ align-items: center;
+ gap: 0.75rem;
+ margin-bottom: 0.75rem;
+}
+.dict-word-main {
+ font-size: 1.3rem;
+ font-weight: 800;
+ color: #1e293b;
+}
+.dict-word-phonetic {
+ font-size: 0.8rem;
+ color: #64748b;
+ font-style: italic;
+}
+.dict-word-play {
+ width: 1.75rem;
+ height: 1.75rem;
+ border: none;
+ border-radius: 50%;
+ background: #eff6ff;
+ color: #3b82f6;
+ font-size: 0.7rem;
+ cursor: pointer;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ transition: background 0.15s;
+}
+.dict-word-play:hover { background: #dbeafe; }
+.dict-meaning-block {
+ margin-bottom: 0.75rem;
+}
+.dict-pos-tag {
+ display: inline-block;
+ font-size: 0.65rem;
+ font-weight: 700;
+ text-transform: uppercase;
+ padding: 2px 8px;
+ border-radius: 999px;
+ background: #dbeafe;
+ color: #2563eb;
+ margin-bottom: 0.4rem;
+}
+.dict-definition {
+ font-size: 0.82rem;
+ color: #334155;
+ line-height: 1.5;
+ margin-bottom: 0.2rem;
+}
+.dict-example {
+ font-size: 0.75rem;
+ color: #64748b;
+ font-style: italic;
+ padding-left: 0.75rem;
+ border-left: 2px solid #dbeafe;
+ margin-top: 0.25rem;
+}
+.dict-synonyms {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 0.3rem;
+ margin-top: 0.5rem;
+}
+.dict-syn-tag {
+ font-size: 0.65rem;
+ padding: 2px 8px;
+ border-radius: 999px;
+ background: #f0fdf4;
+ color: #16a34a;
+ border: 1px solid #bbf7d0;
+}
+.dict-add-vocab-btn {
+ width: 100%;
+ margin-top: 0.75rem;
+ padding: 0.5rem;
+ border: 1.5px dashed #a7f3d0;
+ border-radius: 0.75rem;
+ background: #f0fdf4;
+ color: #059669;
+ font-size: 0.78rem;
+ font-weight: 700;
+ cursor: pointer;
+ transition: all 0.15s;
+}
+.dict-add-vocab-btn:hover {
+ background: #d1fae5;
+ border-color: #6ee7b7;
+}
+.dict-add-vocab-btn:disabled {
+ opacity: 0.5;
+ cursor: default;
+}
+
+
+/* ── Translate Mode ── */
+.dict-lang-row {
+ display: flex;
+ align-items: center;
+ gap: 0.5rem;
+ justify-content: center;
+}
+.dict-lang-label {
+ font-size: 0.8rem;
+ font-weight: 700;
+ color: #475569;
+ padding: 0.3rem 0.75rem;
+ background: #f1f5f9;
+ border-radius: 0.5rem;
+ min-width: 80px;
+ text-align: center;
+}
+.dict-swap-btn {
+ width: 2rem;
+ height: 2rem;
+ border: 1.5px solid #e2e8f0;
+ border-radius: 50%;
+ background: #fff;
+ color: #3b82f6;
+ font-size: 0.7rem;
+ cursor: pointer;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ transition: all 0.2s;
+}
+.dict-swap-btn:hover {
+ background: #eff6ff;
+ transform: rotate(180deg);
+}
+#dictTranslateInput {
+ width: 100%;
+ padding: 0.65rem 0.85rem;
+ border: 1.5px solid #e2e8f0;
+ border-radius: 0.75rem;
+ font-size: 0.82rem;
+ resize: vertical;
+ outline: none;
+ font-family: inherit;
+ transition: border-color 0.15s;
+}
+#dictTranslateInput:focus {
+ border-color: #3b82f6;
+}
+.dict-translate-go-btn {
+ align-self: flex-end;
+ padding: 0.45rem 1.25rem;
+ border: none;
+ border-radius: 0.75rem;
+ background: linear-gradient(135deg, #3b82f6, #6366f1);
+ color: #fff;
+ font-size: 0.78rem;
+ font-weight: 700;
+ cursor: pointer;
+ transition: opacity 0.15s;
+}
+.dict-translate-go-btn:hover { opacity: 0.85; }
+.dict-translate-result-card {
+ background: #f8fafc;
+ border-radius: 0.75rem;
+ border: 1px solid #e2e8f0;
+ padding: 1rem;
+ font-size: 0.85rem;
+ line-height: 1.6;
+ color: #1e293b;
+}
+.dict-translate-label {
+ font-size: 0.65rem;
+ font-weight: 700;
+ text-transform: uppercase;
+ color: #94a3b8;
+ margin-bottom: 0.35rem;
+}
+
+
+/* ── Loading spinner for dict ── */
+.dict-loading {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ padding: 1.5rem;
+ gap: 0.5rem;
+}
+.dict-loading .spinner {
+ width: 24px;
+ height: 24px;
+ border: 3px solid #e2e8f0;
+ border-top-color: #3b82f6;
+ border-radius: 50%;
+ animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+ to { transform: rotate(360deg); }
+}
+
+
+/* ── Selection lookup bubble ── */
+#dictSelectionBubble {
+ position: fixed;
+ z-index: 910;
+ display: flex;
+ align-items: center;
+ gap: 4px;
+ padding: 4px 10px;
+ border-radius: 999px;
+ background: #1e293b;
+ color: #fff;
+ font-size: 0.72rem;
+ font-weight: 600;
+ cursor: pointer;
+ box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+ animation: bubblePop 0.18s ease-out;
+ user-select: none;
+ white-space: nowrap;
+ pointer-events: auto;
+}
+#dictSelectionBubble i {
+ font-size: 0.7rem;
+ color: #93c5fd;
+}
+#dictSelectionBubble:hover {
+ background: #334155;
+}
+@keyframes bubblePop {
+ from { opacity: 0; transform: scale(0.8) translateY(4px); }
+ to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+ .dict-panel {
+   right: 0.5rem;
+   bottom: 5rem;
+   width: calc(100vw - 1rem);
+ }
+ #dictFab {
+   bottom: 1rem;
+   right: 1rem;
+   width: 2.75rem;
+   height: 2.75rem;
+   font-size: 1.1rem;
+ }
+ #storyWordBank {
+   display: none !important;
+ }
+}
+
+
+/* ═══════════════════════════════════════
+  Truyện Chêm — Story Mode
+  ═══════════════════════════════════════ */
+
+
+/* Story tabs */
+.story-tab {
+ color: #94a3b8;
+ border-bottom: 2px solid transparent;
+ background: none;
+ border-left: none;
+ border-right: none;
+ border-top: none;
+ cursor: pointer;
+ transition: all 0.2s;
+}
+.story-tab:hover { color: #6366f1; }
+.story-tab-active {
+ color: #4f46e5 !important;
+ border-bottom-color: #4f46e5 !important;
+}
+
+
+/* Rendered story text */
+.story-rendered {
+ font-size: 0.9375rem;
+ line-height: 1.9;
+ color: #374151;
+}
+
+
+/* Highlighted vocab word in story */
+.story-vocab-word {
+ background: linear-gradient(transparent 55%, #c4b5fd55 55%);
+ color: #4f46e5;
+ font-weight: 600;
+ cursor: pointer;
+ transition: all 0.15s;
+ padding: 0 2px;
+ border-radius: 2px;
+}
+.story-vocab-word:hover {
+ background: #ede9fe;
+}
+/* Words that are in the user's vocab list — stronger emphasis */
+.story-vocab-word.story-vocab-known {
+ border-bottom: 2px solid #a78bfa;
+}
+
+
+/* Story word tooltip */
+#storyTooltip {
+ background: white;
+ border: 1px solid #e2e8f0;
+ border-radius: 0.75rem;
+ box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+ padding: 0.75rem 1rem;
+ max-width: 20rem;
+ min-width: 14rem;
+ animation: explain-slide 0.2s ease-out;
+}
+
+
+/* Fill-in-the-blank input */
+.story-blank-input {
+ display: inline-block;
+ width: 7.5rem;
+ padding: 2px 6px;
+ border: none;
+ border-bottom: 2px dashed #a78bfa;
+ background: #faf5ff;
+ font-size: inherit;
+ font-weight: 600;
+ color: #4f46e5;
+ text-align: center;
+ outline: none;
+ transition: all 0.2s;
+ margin: 0 2px;
+ border-radius: 0;
+}
+.story-blank-input:focus {
+ border-bottom-color: #7c3aed;
+ background: #ede9fe;
+}
+.story-blank-input.correct {
+ border-bottom-color: #22c55e;
+ background: #f0fdf4;
+ color: #15803d;
+}
+.story-blank-input.wrong {
+ border-bottom-color: #ef4444;
+ background: #fef2f2;
+ color: #dc2626;
+}
+
+
+/* Word bank items */
+.story-wb-item {
+ padding: 3px 8px;
+ border-radius: 6px;
+ font-size: 0.7rem;
+ cursor: pointer;
+ transition: all 0.15s;
+ color: #4f46e5;
+ font-weight: 500;
+}
+.story-wb-item:hover {
+ background: #ede9fe;
+}
+.story-wb-item.used {
+ color: #22c55e;
+ opacity: 0.5;
+}
+
+
+/* Story fetch list */
+.story-fetch-item {
+ cursor: pointer;
+}
+.story-fetch-item:disabled {
+ opacity: 0.7;
+ pointer-events: none;
+}
+
+
+/* ══════════════════════════════════════
+  Add Word Modal – Tabs & Import Panel
+  ══════════════════════════════════════ */
+
+
+/* Tab strip shared */
+.aw-tab {
+ color: rgba(255,255,255,0.7);
+ background: transparent;
+ border: none;
+ cursor: pointer;
+}
+.aw-tab:hover {
+ color: #fff;
+ background: rgba(255,255,255,0.15);
+}
+.aw-tab-active {
+ color: #fff !important;
+ background: rgba(255,255,255,0.22) !important;
+}
+
+
+/* Drop zone hover highlight */
+.aw-drop-zone.aw-drop-hover {
+ border-color: #16a34a;
+ background: #f0fdf4;
+}
+
+
+/* Stat cards in preview */
+.aw-stat-card {
+ transition: transform 0.15s;
+}
+.aw-stat-card:hover {
+ transform: translateY(-1px);
+}
+
+
+/* ══════════════════════════════════════
+  Floating Goal Widget
+  ══════════════════════════════════════ */
+.goal-widget {
+ position: fixed;
+ bottom: 80px; /* above dict FAB */
+ right: 1.25rem;
+ z-index: 49;
+ background: white;
+ border: 1px solid #e2e8f0;
+ border-radius: 0.875rem;
+ box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+ padding: 0.55rem 0.8rem 0.6rem;
+ min-width: 140px;
+ cursor: pointer;
+ transition: box-shadow 0.15s, transform 0.15s;
+}
+.goal-widget:hover {
+ box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+ transform: translateY(-2px);
+}
+.goal-widget.goal-widget-complete {
+ border-color: #bbf7d0;
+ background: #f0fdf4;
+}
+.goal-widget-header {
+ display: flex;
+ align-items: center;
+ gap: 5px;
+ font-size: 0.65rem;
+ font-weight: 700;
+ color: #6b7280;
+ text-transform: uppercase;
+ letter-spacing: 0.04em;
+ margin-bottom: 0.45rem;
+}
+.goal-widget-body {
+ display: flex;
+ flex-direction: column;
+ gap: 5px;
+}
+.goal-widget-item {
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ font-size: 0.7rem;
+}
+.goal-widget-bar {
+ flex: 1;
+ height: 5px;
+ background: #f1f5f9;
+ border-radius: 99px;
+ overflow: hidden;
+}
+.goal-widget-fill {
+ height: 100%;
+ border-radius: 99px;
+ transition: width 0.4s ease;
+}
+.goal-widget-fill.done {
+ opacity: 1;
+}
+.goal-widget-label {
+ font-size: 0.6rem;
+ font-weight: 600;
+ color: #9ca3af;
+ min-width: 24px;
+ text-align: right;
+}
+
+
+/* ══════════════════════════════════════
+  Daily Goal — Animations
+  ══════════════════════════════════════ */
+@keyframes goal-pop {
+ 0% { transform: scale(0.8); opacity: 0; }
+ 60% { transform: scale(1.05); }
+ 100% { transform: scale(1); opacity: 1; }
+}
+#dailyGoalModal > div,
+#goalCelebration > div {
+ animation: goal-pop 0.3s ease-out;
+}
+@keyframes goal-confetti {
+ 0% { background-position: 0% 0%; }
+ 100% { background-position: 200% 0%; }
+}
+#goalCelebration .text-6xl {
+ animation: goal-confetti 1s ease-in-out infinite alternate;
+ display: inline-block;
+}
+
+
+
