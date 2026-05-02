@@ -316,6 +316,8 @@
 
     $('uploadSection').classList.add('hidden');
     $('appContent').classList.remove('hidden');
+    const bNav = $('bottomNav');
+    if (bNav) bNav.classList.remove('hidden');
     $('wordCountBadge').classList.remove('hidden');
     $('wordCountBadge').classList.add('flex');
     $('wordCountText').textContent = vocabData.length + ' words';
