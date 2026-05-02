@@ -13,6 +13,8 @@
 
     // Render file history
     renderFileHistory();
+    // Render available topics
+    renderTopics();
 
     // Cached session?
     const cached = localStorage.getItem(LS_KEY);
@@ -101,7 +103,7 @@
       return;
     }
     try {
-      const topicName = filename.replace('.csv', '').toUpperCase();
+      const topicName = filename.replace('.csv', '').replace(/_/g, ' ').toUpperCase();
       toast('Đang tải chủ đề: ' + topicName + '...', 'info');
       const response = await fetch('csv/' + filename);
       if (!response.ok) throw new Error('Không thể tải tệp ' + filename + ' (Mã lỗi: ' + response.status + ')');
@@ -113,6 +115,81 @@
       toast('Lỗi khi tải chủ đề: ' + error.message, 'error');
     }
   };
+
+  async function renderTopics() {
+    const container = $('topicContainer');
+    if (!container) return;
+
+    let topics = [];
+    try {
+      // Attempt to auto-detect by fetching the directory index
+      const resp = await fetch('csv/');
+      if (resp.ok) {
+        const html = await resp.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const links = Array.from(doc.querySelectorAll('a'))
+          .map(a => a.getAttribute('href'))
+          .filter(href => href && href.endsWith('.csv') && !href.startsWith('..'));
+        
+        if (links.length > 0) {
+          topics = links.map(link => {
+            const file = link.split('/').pop();
+            const label = file.replace('.csv', '').replace(/_/g, ' ');
+            return { file, label };
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Directory auto-detect failed, using fallback list.', e);
+    }
+
+    // Fallback to the known list if auto-detect failed or returned nothing
+    if (topics.length === 0) {
+      topics = [
+        { file: 'advertising.csv', label: 'Quảng cáo' },
+        { file: 'city.csv', label: 'Thành phố' },
+        { file: 'culture.csv', label: 'Văn hóa' },
+        { file: 'family.csv', label: 'Gia đình' },
+        { file: 'health.csv', label: 'Sức khỏe' },
+        { file: 'overpopulation.csv', label: 'Dân số' },
+        { file: 'rich&poor.csv', label: 'Giàu & Nghèo' },
+        { file: 'technology.csv', label: 'Công nghệ' },
+        { file: 'tourism.csv', label: 'Du lịch' },
+        { file: 'transport.csv', label: 'Giao thông' },
+        { file: 'waste.csv', label: 'Rác thải' },
+        { file: 'working_from_home.csv', label: 'W.F.H' }
+      ];
+    }
+
+    // Icon & Color mapping
+    const meta = {
+      'health': { icon: 'fa-heart-pulse', color: 'bg-red-100 text-red-600' },
+      'tech': { icon: 'fa-microchip', color: 'bg-cyan-100 text-cyan-600' },
+      'advertising': { icon: 'fa-bullhorn', color: 'bg-amber-100 text-amber-600' },
+      'city': { icon: 'fa-city', color: 'bg-blue-100 text-blue-600' },
+      'culture': { icon: 'fa-landmark', color: 'bg-indigo-100 text-indigo-600' },
+      'family': { icon: 'fa-people-roof', color: 'bg-pink-100 text-pink-600' },
+      'overpopulation': { icon: 'fa-users-slash', color: 'bg-orange-100 text-orange-600' },
+      'rich': { icon: 'fa-scale-unbalanced', color: 'bg-emerald-100 text-emerald-600' },
+      'tourism': { icon: 'fa-map-location-dot', color: 'bg-lime-100 text-lime-600' },
+      'transport': { icon: 'fa-bus', color: 'bg-purple-100 text-purple-600' },
+      'waste': { icon: 'fa-trash-can', color: 'bg-gray-100 text-gray-600' },
+      'work': { icon: 'fa-laptop-house', color: 'bg-sky-100 text-sky-600' }
+    };
+
+    container.innerHTML = topics.map(t => {
+      const key = Object.keys(meta).find(k => t.file.toLowerCase().includes(k)) || 'default';
+      const m = meta[key] || { icon: 'fa-file-csv', color: 'bg-gray-100 text-gray-600' };
+      return `
+        <button onclick="loadTopic('${t.file}')" class="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition group">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full ${m.color} flex items-center justify-center group-hover:scale-110 transition">
+            <i class="fa-solid ${m.icon} text-sm sm:text-base"></i>
+          </div>
+          <span class="text-[10px] sm:text-xs font-bold text-gray-700 text-center line-clamp-1 capitalize">${t.label}</span>
+        </button>
+      `;
+    }).join('');
+  }
 
   /* ━━━━━━━━━ FILE PARSING ━━━━━━━━━ */
   function handleFile(file) {

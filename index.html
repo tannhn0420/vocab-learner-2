@@ -37,7 +37,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Vocab Learner — English Vocabulary Builder</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#3b82f6">
+<meta name="theme-color" content="#ea580c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Vocab Learner">
@@ -51,14 +51,16 @@ tailwind.config = {
   darkMode: 'class',
   theme: {
     extend: {
-      colors: {
-        brand: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' },
-        surface: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1' }
+        brand: { 50:'#fff7ed',100:'#ffedd5',200:'#fed7aa',300:'#fdba74',400:'#fb923c',500:'#f97316',600:'#ea580c',700:'#c2410c',800:'#9a3412',900:'#7c2d12' },
+        surface: { 50:'#fafaf9',100:'#f5f5f4',200:'#e7e5e4',300:'#d6d3d1' }
       },
-      fontFamily: { sans: ['Inter','system-ui','sans-serif'] }
+      fontFamily: { 
+        sans: ['Inter','system-ui','sans-serif'],
+        serif: ['Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif']
+      }
     }
   }
-}
+
 </script>
 
 <!-- FontAwesome -->
@@ -82,7 +84,7 @@ tailwind.config = {
           <i class="fa-solid fa-book-open text-white text-sm"></i>
         </div>
       </a>
-      <a href=""><span class="text-lg font-bold text-brand-800 tracking-tight">Vocab Learner</span></a>
+      <a href=""><span class="text-xl font-serif font-bold text-brand-800 tracking-tight">Vocab Learner</span></a>
     </div>
     <div class="flex items-center gap-1 sm:gap-3">
       <div id="wordCountBadge" class="hidden items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full">
@@ -154,25 +156,8 @@ tailwind.config = {
           <!-- Topic Selection -->
           <div class="mb-6">
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 text-left">Luyện tập theo chủ đề</p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button onclick="loadTopic('health.csv')" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition group">
-                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition">
-                  <i class="fa-solid fa-heart-pulse"></i>
-                </div>
-                <span class="text-xs font-bold text-gray-700">Sức khỏe</span>
-              </button>
-              <button onclick="loadTopic('technology.csv')" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition group">
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition">
-                  <i class="fa-solid fa-microchip"></i>
-                </div>
-                <span class="text-xs font-bold text-gray-700">Công nghệ</span>
-              </button>
-              <button onclick="loadTopic('advertising.csv')" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition group">
-                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 group-hover:scale-110 transition">
-                  <i class="fa-solid fa-bullhorn"></i>
-                </div>
-                <span class="text-xs font-bold text-gray-700">Quảng cáo</span>
-              </button>
+            <div id="topicContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              <!-- Dynamically populated -->
             </div>
           </div>
 
@@ -215,28 +200,28 @@ tailwind.config = {
   <section id="appContent" class="hidden fade-in space-y-8">
 
     <!-- Tab bar (Bottom Nav on Mobile) -->
-    <div class="fixed sm:static bottom-0 left-0 w-full sm:w-auto sm:max-w-2xl mx-auto bg-white/90 sm:bg-white dark:bg-[#18181b]/90 backdrop-blur-xl sm:backdrop-blur-none border-t sm:border border-surface-200 p-2 sm:p-1.5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-none sm:shadow-sm z-50 flex items-center justify-around sm:justify-start gap-1 overflow-x-auto scrollbar-hide pb-[max(env(safe-area-inset-bottom,0.5rem),0.5rem)] sm:pb-1.5 rounded-none sm:rounded-xl">
-      <button data-tab="flashcards" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition active text-brand-700 bg-transparent sm:bg-brand-50"
+    <div class="fixed sm:static bottom-0 left-0 w-full sm:w-auto sm:max-w-2xl mx-auto bg-white/90 sm:bg-white dark:bg-[#18181b]/90 backdrop-blur-xl sm:backdrop-blur-none border-t sm:border border-surface-200 p-2 sm:p-1.5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-none sm:shadow-sm z-50 flex items-center justify-start gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide pb-[max(env(safe-area-inset-bottom,0.5rem),0.5rem)] sm:pb-1.5 rounded-none sm:rounded-xl">
+      <button data-tab="flashcards" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 min-w-[72px] sm:min-w-0 sm:flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold rounded-xl sm:rounded-lg transition active text-brand-700 bg-transparent sm:bg-brand-50"
         onclick="switchTab('flashcards')">
         <i class="fa-solid fa-clone text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Flashcards</span>
       </button>
-      <button data-tab="list" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
+      <button data-tab="list" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 min-w-[72px] sm:min-w-0 sm:flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold rounded-xl sm:rounded-lg transition text-gray-500 hover:bg-surface-50"
         onclick="switchTab('list')">
         <i class="fa-solid fa-table-list text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>List</span>
       </button>
-      <button data-tab="quiz" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
+      <button data-tab="quiz" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 min-w-[72px] sm:min-w-0 sm:flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold rounded-xl sm:rounded-lg transition text-gray-500 hover:bg-surface-50"
         onclick="switchTab('quiz')">
         <i class="fa-solid fa-gamepad text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Quiz</span>
       </button>
-      <button data-tab="reader" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
+      <button data-tab="reader" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 min-w-[72px] sm:min-w-0 sm:flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold rounded-xl sm:rounded-lg transition text-gray-500 hover:bg-surface-50"
         onclick="switchTab('reader')">
         <i class="fa-solid fa-newspaper text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Reader</span>
       </button>
-      <button data-tab="story" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
+      <button data-tab="story" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 min-w-[72px] sm:min-w-0 sm:flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold rounded-xl sm:rounded-lg transition text-gray-500 hover:bg-surface-50"
         onclick="switchTab('story')">
         <i class="fa-solid fa-book-open-reader text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Truyện</span>
       </button>
-      <button data-tab="speaking" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
+      <button data-tab="speaking" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 min-w-[72px] sm:min-w-0 sm:flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold rounded-xl sm:rounded-lg transition text-gray-500 hover:bg-surface-50"
         onclick="switchTab('speaking')">
         <i class="fa-solid fa-microphone text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Speaking</span>
       </button>
