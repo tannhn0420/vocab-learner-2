@@ -529,6 +529,25 @@
     });
   }
 
+  window.loadTopic = async function(filename) {
+    if (window.location.protocol === 'file:') {
+      toast('Lỗi: Tính năng chọn chủ đề yêu cầu chạy ứng dụng qua Live Server hoặc Local Server (không thể dùng file://)', 'error', 6000);
+      return;
+    }
+    try {
+      const topicName = filename.replace('.csv', '').toUpperCase();
+      toast('Đang tải chủ đề: ' + topicName + '...', 'info');
+      const response = await fetch('csv/' + filename);
+      if (!response.ok) throw new Error('Không thể tải tệp ' + filename + ' (Mã lỗi: ' + response.status + ')');
+      const blob = await response.blob();
+      const file = new File([blob], filename, { type: 'text/csv' });
+      handleFile(file);
+    } catch (error) {
+      console.error(error);
+      toast('Lỗi khi tải chủ đề: ' + error.message, 'error');
+    }
+  };
+
   /* ━━━━━━━━━ FILE PARSING ━━━━━━━━━ */
   function handleFile(file) {
     const validTypes = [
@@ -1303,6 +1322,9 @@
       const opts = shuffle([correctSyn, ...wrongOpts]);
       return { type:'synonym', word:c.word, answer:correctSyn, allCorrect:mySynonyms, options:opts, idx };
     }
+    if (mode === 'speaking') {
+      return { type:'speaking', word:c.word, definition:c.definition, answer:c.word, phonetics:c.phonetics, idx };
+    }
     /* cloze */
     const rx = new RegExp('\\b' + escRx(c.word) + '\\b', 'i');
     return { type:'cloze', clozeText:c.context.replace(rx, '_____'),
@@ -1325,6 +1347,7 @@
     $('quizOptions').classList.add('hidden');
     $('quizOptions').innerHTML = '';
     $('quizInputArea').classList.add('hidden');
+    $('quizSpeakingArea').classList.add('hidden');
     $('quizTextFeedback').classList.add('hidden');
     $('quizSpeakerReveal').classList.add('hidden');
     $('quizContextCard').classList.add('hidden');
@@ -1337,7 +1360,7 @@
     $('quizSubmitBtn').classList.remove('hidden');
 
     /* mode badge */
-    const labels = { mc:'Multiple Choice', typein:'Type-in', cloze:'Cloze Test', listening:'Listening', reverse:'Reverse', synonym:'Synonym Match', smart:'⚡ Smart' };
+    const labels = { mc:'Multiple Choice', typein:'Type-in', cloze:'Cloze Test', listening:'Listening', reverse:'Reverse', synonym:'Synonym Match', speaking:'Speaking', smart:'⚡ Smart' };
     const badgeLabel = (labels[q.type] || '');
     $('quizModeBadge').textContent = quizMode === 'mixed' ? '🎲 ' + badgeLabel : badgeLabel;
 
@@ -1385,6 +1408,27 @@
           <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-surface-100 text-xs font-bold text-gray-500 mr-2">${String.fromCharCode(65+i)}</span>
           ${esc(opt)}
         </button>`).join('');
+
+    } else if (q.type === 'speaking') {
+      $('quizPrompt').innerHTML = '<i class="fa-solid fa-microphone mr-1 text-red-500"></i> Hãy đọc từ vựng có ý nghĩa này:';
+      
+      let html = '<span class="text-2xl font-extrabold text-brand-700">' + esc(q.definition) + '</span>';
+      if (q.phonetics) {
+        html += '<br><span class="text-sm text-indigo-500 font-medium mt-2 block">' + esc(q.phonetics) + '</span>';
+      }
+      $('quizQuestion').innerHTML = html;
+      
+      $('quizSpeakingArea').classList.remove('hidden');
+      $('quizSubmitBtn').classList.add('hidden');
+      if (typeof window.stopQuizRecordingUI === 'function') window.stopQuizRecordingUI();
+      $('quizSpeakingFeedback').classList.add('hidden');
+      const interimEl = $('quizSpeakingInterimTranscript');
+      if (interimEl) {
+        interimEl.innerHTML = '';
+        interimEl.classList.remove('opacity-100', 'scale-100');
+        interimEl.classList.add('opacity-0', 'scale-95');
+      }
+      if (window.quizRecognition && window.isQuizRecording) window.quizRecognition.stop();
 
     } else {
       // cloze
@@ -1518,6 +1562,150 @@
     quizReport.push({ word: srsWord, correct: ok, userAnswer: val, correctAnswer: displayAnswer, mode: q.type, mistakeInfo, _qIdx: q.idx, _qOrder: quizIdx });
     afterAnswer(srsWord, ok);
   };
+
+  /* ━━━━━━━━━ QUIZ — SPEAKING ANSWER ━━━━━━━━━ */
+  window.quizRecognition = null;
+  window.isQuizRecording = false;
+  let quizSpeakingTranscriptAcc = '';
+  let quizSpeakingEvalTimeout = null;
+
+  window.toggleQuizRecording = function() {
+    if (quizAnswered) return;
+    if (window.isQuizRecording && window.quizRecognition) {
+      window.quizRecognition.stop();
+      return;
+    }
+    
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast('Speech Recognition API not supported. Please use Chrome.', 'error');
+      return;
+    }
+
+    if (!window.quizRecognition) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      window.quizRecognition = new SpeechRecognition();
+      window.quizRecognition.lang = 'en-US';
+      window.quizRecognition.interimResults = true;
+      window.quizRecognition.continuous = true;
+      window.quizRecognition.maxAlternatives = 1;
+      
+      window.quizRecognition.onstart = function() {
+        window.isQuizRecording = true;
+        quizSpeakingTranscriptAcc = '';
+        if (quizSpeakingEvalTimeout) clearTimeout(quizSpeakingEvalTimeout);
+        $('quizMicBtn').classList.add('bg-red-600', 'scale-110');
+        $('quizMicBtn').classList.remove('bg-red-500');
+        $('quizRecordingPulse').classList.remove('hidden');
+        $('quizSpeakingStatus').textContent = 'Đang nghe...';
+        const interimEl = $('quizSpeakingInterimTranscript');
+        if (interimEl) {
+          interimEl.innerHTML = '';
+          interimEl.classList.remove('opacity-100', 'scale-100');
+          interimEl.classList.add('opacity-0', 'scale-95');
+        }
+      };
+      
+      window.quizRecognition.onresult = function(event) {
+        let interimTranscript = '';
+        let finalStr = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalStr += event.results[i][0].transcript + ' ';
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        if (finalStr) quizSpeakingTranscriptAcc += finalStr;
+        
+        const el = $('quizSpeakingInterimTranscript');
+        if (el) {
+          const fullText = (quizSpeakingTranscriptAcc + '<span class="opacity-50">' + interimTranscript + '</span>').trim();
+          if (fullText) {
+            el.innerHTML = fullText;
+            el.classList.remove('opacity-0', 'scale-95');
+            el.classList.add('opacity-100', 'scale-100');
+          }
+        }
+
+        if (quizSpeakingEvalTimeout) clearTimeout(quizSpeakingEvalTimeout);
+        quizSpeakingEvalTimeout = setTimeout(() => {
+          if (window.isQuizRecording && window.quizRecognition) window.quizRecognition.stop();
+        }, 2000); // 2 second delay before auto-eval
+      };
+      
+      window.quizRecognition.onerror = function(event) {
+        if (event.error === 'no-speech') return; // ignore no-speech
+        let msg = event.error;
+        if (event.error === 'network') msg += ' (Do chạy offline file:// hoặc mất mạng)';
+        toast('Lỗi Microphone: ' + msg, 'error');
+        window.stopQuizRecordingUI();
+      };
+      
+      window.quizRecognition.onend = function() {
+        window.stopQuizRecordingUI();
+        if (quizSpeakingTranscriptAcc.trim()) {
+          evaluateQuizSpeech(quizSpeakingTranscriptAcc.trim());
+        }
+      };
+    }
+    
+    $('quizSpeakingFeedback').classList.add('hidden');
+    try {
+      window.quizRecognition.start();
+    } catch(e) { console.error(e); }
+  };
+
+  window.stopQuizRecordingUI = function() {
+    window.isQuizRecording = false;
+    const btn = $('quizMicBtn');
+    if (btn) {
+      btn.classList.remove('bg-red-600', 'scale-110');
+      btn.classList.add('bg-red-500');
+    }
+    const pulse = $('quizRecordingPulse');
+    if (pulse) pulse.classList.add('hidden');
+    const status = $('quizSpeakingStatus');
+    if (status && !quizAnswered) status.textContent = 'Nhấn để nói';
+  };
+
+  function evaluateQuizSpeech(transcript) {
+    if (quizAnswered) return;
+    quizAnswered = true;
+    
+    const q = quizQuestions[quizIdx];
+    const targetWords = q.answer.toLowerCase().replace(/[.,!?]/g, '').split(' ').filter(w=>w);
+    const actualWords = transcript.toLowerCase().replace(/[.,!?]/g, '').split(' ').filter(w=>w);
+    
+    let matches = 0;
+    for (const tw of targetWords) {
+      if (actualWords.includes(tw)) matches++;
+    }
+    const pct = targetWords.length ? (matches / targetWords.length) : 0;
+    const ok = pct >= 0.8; // 80% is considered correct
+
+    const fb = $('quizSpeakingFeedback');
+    fb.classList.remove('hidden', 'bg-green-100', 'bg-red-100', 'text-green-700', 'text-red-700');
+    
+    if (ok) {
+      quizScore.correct++;
+      fb.classList.add('bg-green-100', 'text-green-700');
+      fb.innerHTML = '<i class="fa-solid fa-circle-check"></i> Chính xác! Bạn đã nói: "' + esc(transcript) + '"';
+    } else {
+      quizScore.wrong++;
+      fb.classList.add('bg-red-100', 'text-red-700');
+      fb.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Sai rồi. Bạn đã nói: "' + esc(transcript) + '"';
+    }
+    
+    $('quizSpeakingStatus').textContent = 'Đã nhận diện xong';
+
+    const srsWord = q.answer;
+    updateSRS(srsWord, ok);
+    if (!ok) addWrongWord(srsWord);
+    else removeWrongWord(srsWord);
+    const mistakeInfo = ok ? null : { type: 'pronunciation', label: 'Pronunciation', icon: 'fa-microphone', color: 'pink' };
+    quizReport.push({ word: srsWord, correct: ok, userAnswer: transcript, correctAnswer: q.answer, mode: 'speaking', mistakeInfo, _qIdx: q.idx, _qOrder: quizIdx });
+    afterAnswer(srsWord, ok);
+  }
 
   /* ━━━━━━━━━ QUIZ — AFTER ANSWER (common) ━━━━━━━━━ */
   function afterAnswer(word, ok) {
@@ -4031,13 +4219,228 @@
     if (!goal) {
       // Only prompt if user has data loaded
       if (vocabData.length > 0) {
-        setTimeout(() => openDailyGoalModal(), 500);
+      setTimeout(() => openDailyGoalModal(), 500);
       }
+    }
+  }
+
+  /* ━━━━━━━━━ DARK MODE ━━━━━━━━━ */
+  window.toggleDarkMode = function() {
+    const html = document.documentElement;
+    html.classList.toggle('dark');
+    const isDark = html.classList.contains('dark');
+    localStorage.setItem('vocabLearnerDarkMode', isDark);
+    const icon = $('darkModeIcon');
+    if (icon) {
+      icon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
+    }
+  };
+
+  // Load dark mode on start
+  if (localStorage.getItem('vocabLearnerDarkMode') === 'true') {
+    document.documentElement.classList.add('dark');
+    window.addEventListener('DOMContentLoaded', () => {
+      const icon = $('darkModeIcon');
+      if (icon) icon.className = 'fa-solid fa-sun text-amber-400';
+    });
+  }
+
+  /* ━━━━━━━━━ SPEAKING FEATURE ━━━━━━━━━ */
+  let speakingMode = 'word'; // 'word' or 'context'
+  let speakingTargets = [];
+  let speakingIdx = 0;
+  let recognition = null;
+  let isRecording = false;
+  let speakingTranscriptAcc = '';
+  let speakingEvalTimeout = null;
+
+  window.startSpeakingSession = function(mode) {
+    if (!vocabData.length) { toast('Please load vocabulary first.', 'error'); return; }
+    speakingMode = mode;
+    speakingTargets = vocabData.filter(v => mode === 'word' ? v.word : v.context);
+    if (!speakingTargets.length) { toast('No valid targets for this mode.', 'error'); return; }
+    
+    // shuffle
+    speakingTargets.sort(() => Math.random() - 0.5);
+    speakingIdx = 0;
+    
+    $('speakingPlayArea').classList.remove('hidden');
+    $('speakingPromptType').textContent = mode === 'word' ? 'Hãy đọc to từ này' : 'Hãy đọc to câu này';
+    $('speakingTotal').textContent = speakingTargets.length;
+    
+    initSpeechRecognition();
+    renderSpeakingTarget();
+  };
+
+  function initSpeechRecognition() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast('Speech Recognition API not supported in your browser. Please use Chrome/Edge.', 'error');
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.maxAlternatives = 1;
+    
+    recognition.onstart = function() {
+      isRecording = true;
+      speakingTranscriptAcc = '';
+      if (speakingEvalTimeout) clearTimeout(speakingEvalTimeout);
+      $('micBtn').classList.add('bg-red-600', 'scale-110');
+      $('micBtn').classList.remove('bg-red-500');
+      $('recordingPulse').classList.remove('hidden');
+      const interimEl = $('speakingInterimTranscript');
+      if (interimEl) {
+        interimEl.innerHTML = '';
+        interimEl.classList.remove('opacity-100', 'scale-100');
+        interimEl.classList.add('opacity-0', 'scale-95');
+      }
+      $('speakingResultBox').classList.add('hidden');
+    };
+    
+    recognition.onresult = function(event) {
+      let interimTranscript = '';
+      let finalStr = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalStr += event.results[i][0].transcript + ' ';
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalStr) speakingTranscriptAcc += finalStr;
+      
+      const el = $('speakingInterimTranscript');
+      if (el) {
+        const fullText = (speakingTranscriptAcc + '<span class="opacity-50">' + interimTranscript + '</span>').trim();
+        if (fullText) {
+          el.innerHTML = fullText;
+          el.classList.remove('opacity-0', 'scale-95');
+          el.classList.add('opacity-100', 'scale-100');
+        }
+      }
+
+      if (speakingEvalTimeout) clearTimeout(speakingEvalTimeout);
+      speakingEvalTimeout = setTimeout(() => {
+        if (isRecording && recognition) recognition.stop();
+      }, 2000); // 2 second delay before auto-eval
+    };
+    
+    recognition.onerror = function(event) {
+      if (event.error === 'no-speech') return;
+      toast('Lỗi Microphone: ' + event.error, 'error');
+      stopRecordingUI();
+    };
+    
+    recognition.onend = function() {
+      stopRecordingUI();
+      if (speakingTranscriptAcc.trim()) {
+        evaluateSpeech(speakingTranscriptAcc.trim());
+      }
+    };
+  }
+
+  function stopRecordingUI() {
+    isRecording = false;
+    $('micBtn').classList.remove('bg-red-600', 'scale-110');
+    $('micBtn').classList.add('bg-red-500');
+    $('recordingPulse').classList.add('hidden');
+  }
+
+  window.toggleRecording = function() {
+    if (!recognition) return;
+    if (isRecording) {
+      recognition.stop();
+    } else {
+      $('speakingResultBox').classList.add('hidden');
+      recognition.start();
+    }
+  };
+
+  window.stopSpeakingSession = function() {
+    if (isRecording && recognition) recognition.stop();
+    $('speakingPlayArea').classList.add('hidden');
+  };
+
+  function renderSpeakingTarget() {
+    $('speakingCurrent').textContent = speakingIdx + 1;
+    const item = speakingTargets[speakingIdx];
+    let textToSpeak = speakingMode === 'word' ? item.word : item.context;
+    
+    if (speakingMode === 'context') {
+      textToSpeak = textToSpeak.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+    }
+    
+    $('speakingTargetText').textContent = textToSpeak;
+    $('speakingPhonetics').textContent = item.phonetics || '';
+    $('speakingResultBox').classList.add('hidden');
+    
+    const interimEl = $('speakingInterimTranscript');
+    if (interimEl) {
+      interimEl.innerHTML = '';
+      interimEl.classList.remove('opacity-100', 'scale-100');
+      interimEl.classList.add('opacity-0', 'scale-95');
+    }
+  }
+
+  window.nextSpeakingTarget = function() {
+    if (isRecording && recognition) recognition.stop();
+    if (speakingIdx < speakingTargets.length - 1) {
+      speakingIdx++;
+      renderSpeakingTarget();
+    } else {
+      toast('Đã hoàn thành phiên luyện đọc!', 'success');
+      stopSpeakingSession();
+    }
+  };
+
+  window.speakTargetText = function() {
+    const text = $('speakingTargetText').textContent;
+    speakWord(text);
+  };
+
+  function evaluateSpeech(transcript) {
+    const target = $('speakingTargetText').textContent.toLowerCase().replace(/[.,!?]/g, '');
+    const actual = transcript.toLowerCase().replace(/[.,!?]/g, '');
+    
+    // Simple word matching logic
+    const targetWords = target.split(' ').filter(w=>w);
+    const actualWords = actual.split(' ').filter(w=>w);
+    
+    let matches = 0;
+    let diffHTML = '';
+    
+    // evaluate per word
+    for (const tw of targetWords) {
+      if (actualWords.includes(tw)) {
+        matches++;
+        diffHTML += '<span class="diff-correct">' + tw + '</span> ';
+      } else {
+        diffHTML += '<span class="diff-wrong">' + tw + '</span> ';
+      }
+    }
+    
+    const pct = targetWords.length ? Math.round((matches / targetWords.length) * 100) : 0;
+    
+    $('speakingResultBox').classList.remove('hidden');
+    $('speakingTranscript').innerHTML = diffHTML + '<br><span class="text-xs text-gray-400 mt-2 block">Bạn đã nói: "' + transcript + '"</span>';
+    
+    const badge = $('speakingScoreBadge');
+    badge.className = 'text-xs font-bold px-2 py-1 rounded-full ';
+    if (pct >= 80) {
+      badge.textContent = pct + '% - Xuất sắc 🌟';
+      badge.classList.add('score-perfect');
+    } else if (pct >= 50) {
+      badge.textContent = pct + '% - Khá tốt 👍';
+      badge.classList.add('score-good');
+    } else {
+      badge.textContent = pct + '% - Thử lại nhé ❌';
+      badge.classList.add('score-bad');
     }
   }
 
   /* ━━━━━━━━━ BOOT ━━━━━━━━━ */
   init();
 })();
-
-

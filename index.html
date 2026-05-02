@@ -41,6 +41,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -63,7 +64,7 @@ tailwind.config = {
 <link rel="stylesheet" href="vocab-learner.css"/>
 </head>
 
-<body class="bg-surface-50 antialiased">
+<body class="bg-surface-50 antialiased transition-colors duration-300">
 
 <!-- ═══════════════════ NAVBAR ═══════════════════ -->
 <nav class="bg-white/80 backdrop-blur-md border-b border-surface-200 sticky top-0 z-50">
@@ -113,6 +114,9 @@ tailwind.config = {
         <span class="hidden sm:inline">Goal</span>
         <span id="goalNavBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 text-white text-[9px] font-bold flex items-center justify-center">✓</span>
       </button>
+      <button onclick="toggleDarkMode()" class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-indigo-600 transition px-3 py-1.5 rounded-full hover:bg-indigo-50" title="Toggle Dark Mode">
+        <i id="darkModeIcon" class="fa-solid fa-moon"></i>
+      </button>
     </div>
   </div>
 </nav>
@@ -139,6 +143,38 @@ tailwind.config = {
             <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Antonyms</span>,
             <span class="font-mono text-xs bg-surface-100 px-1.5 py-0.5 rounded">Context/Example</span>
           </p>
+
+          <!-- Topic Selection -->
+          <div class="mb-6">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 text-left">Luyện tập theo chủ đề</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button onclick="loadTopic('health.csv')" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition group">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition">
+                  <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <span class="text-xs font-bold text-gray-700">Sức khỏe</span>
+              </button>
+              <button onclick="loadTopic('technology.csv')" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition group">
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition">
+                  <i class="fa-solid fa-microchip"></i>
+                </div>
+                <span class="text-xs font-bold text-gray-700">Công nghệ</span>
+              </button>
+              <button onclick="loadTopic('advertising.csv')" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition group">
+                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 group-hover:scale-110 transition">
+                  <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <span class="text-xs font-bold text-gray-700">Quảng cáo</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 mb-6">
+             <div class="h-px bg-surface-200 flex-1"></div>
+             <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Hoặc tải file lên</span>
+             <div class="h-px bg-surface-200 flex-1"></div>
+          </div>
+
 
           <label id="dropZone" class="upload-area cursor-pointer flex flex-col items-center gap-3 rounded-xl p-8 bg-surface-50">
             <i class="fa-solid fa-file-arrow-up text-4xl text-brand-400"></i>
@@ -192,6 +228,10 @@ tailwind.config = {
       <button data-tab="story" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
         onclick="switchTab('story')">
         <i class="fa-solid fa-book-open-reader mr-1"></i> <span class="hidden sm:inline">Truyện</span><span class="sm:hidden">TC</span>
+      </button>
+      <button data-tab="speaking" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+        onclick="switchTab('speaking')">
+        <i class="fa-solid fa-microphone mr-1"></i> Luyện Nói
       </button>
     </div>
 
@@ -360,6 +400,7 @@ tailwind.config = {
               <button type="button" data-mode="listening" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🎧 Listening</button>
               <button type="button" data-mode="reverse" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🔄 Reverse</button>
               <button type="button" data-mode="synonym" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🔗 Synonym</button>
+              <button type="button" data-mode="speaking" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🗣️ Speaking</button>
             </div>
             <div class="flex justify-center gap-3 mt-2">
               <button onclick="selectAllQuizModes()" class="text-xs text-brand-500 hover:text-brand-700 font-semibold transition">Select All</button>
@@ -391,6 +432,7 @@ tailwind.config = {
           <p><strong class="text-gray-500">Listening:</strong> Hear the word and type what you hear.</p>
           <p><strong class="text-gray-500">Reverse:</strong> See a word, type its definition.</p>
           <p><strong class="text-gray-500">Synonym:</strong> Pick the correct synonym.</p>
+          <p><strong class="text-gray-500">Speaking:</strong> Read the word aloud to practice pronunciation.</p>
           <p class="mt-1 text-amber-500"><strong>🧠 Recall Only:</strong> Type-in + Listening + Reverse — forces active recall for stronger memory.</p>
         </div>
 
@@ -452,6 +494,18 @@ tailwind.config = {
             </button>
           </div>
           <div id="quizTextFeedback" class="hidden quiz-text-feedback"></div>
+        </div>
+        <!-- Speaking input area -->
+        <div id="quizSpeakingArea" class="hidden flex flex-col items-center gap-4 py-2">
+          <button id="quizMicBtn" onclick="toggleQuizRecording()" class="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-md transition-transform flex items-center justify-center text-2xl relative">
+            <i class="fa-solid fa-microphone"></i>
+            <span id="quizRecordingPulse" class="hidden absolute inset-0 rounded-full border-4 border-red-300 animate-ping"></span>
+          </button>
+          <p id="quizSpeakingStatus" class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Nhấn để nói</p>
+          <div class="mt-2 min-h-[3rem] flex items-center justify-center w-full">
+            <p id="quizSpeakingInterimTranscript" class="text-base text-indigo-600 dark:text-indigo-300 font-medium italic px-5 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 rounded-2xl shadow-sm transition-all duration-300 opacity-0 scale-95 w-fit max-w-full break-words"></p>
+          </div>
+          <div id="quizSpeakingFeedback" class="hidden w-full text-center p-3 rounded-xl"></div>
         </div>
         <!-- Speaker reveal (shown after answering) -->
         <div id="quizSpeakerReveal" class="hidden flex flex-col items-center gap-1"></div>
@@ -722,6 +776,73 @@ tailwind.config = {
             <p class="text-[0.65rem] text-gray-400 mb-2">Click a word to insert at cursor</p>
             <div id="storyWordBankList" class="space-y-0.5"></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ SPEAKING TAB ═══════ -->
+    <div id="tab-speaking" class="tab-content hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden mb-5 max-w-2xl mx-auto">
+        <div class="p-6 space-y-6 text-center">
+          <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <i class="fa-solid fa-microphone text-white text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Luyện Phát Âm</h3>
+            <p class="text-sm text-gray-500">Đọc từ vựng hoặc câu ví dụ. Hệ thống sẽ thu âm và chấm điểm độ chính xác của bạn.</p>
+          </div>
+
+          <div class="flex items-center justify-center gap-4">
+            <button onclick="startSpeakingSession('word')" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition flex items-center gap-2 shadow-md hover:shadow-lg">
+              <i class="fa-solid fa-font"></i> Luyện theo Từ
+            </button>
+            <button onclick="startSpeakingSession('context')" class="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold transition flex items-center gap-2 shadow-md hover:shadow-lg">
+              <i class="fa-solid fa-quote-left"></i> Luyện Câu Ví dụ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Speaking Interface -->
+      <div id="speakingPlayArea" class="hidden max-w-xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-lg border border-surface-200 p-8 text-center space-y-6 relative overflow-hidden">
+          
+          <div class="flex items-center justify-between text-sm font-semibold text-gray-500">
+             <span>Từ <span id="speakingCurrent">1</span> / <span id="speakingTotal">0</span></span>
+             <button onclick="stopSpeakingSession()" class="text-xs text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark mr-1"></i> Dừng</button>
+          </div>
+
+          <p id="speakingPromptType" class="text-xs uppercase tracking-widest text-indigo-400 font-bold mb-1">Hãy đọc to</p>
+          
+          <div class="min-h-[100px] flex items-center justify-center flex-col gap-3">
+             <h2 id="speakingTargetText" class="text-3xl sm:text-4xl font-extrabold text-gray-800 leading-tight"></h2>
+             <p id="speakingPhonetics" class="text-sm text-indigo-500 font-medium"></p>
+             <div class="mt-3 min-h-[3rem] flex items-center justify-center w-full">
+               <p id="speakingInterimTranscript" class="text-lg text-indigo-600 dark:text-indigo-300 font-medium italic px-6 py-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 rounded-2xl shadow-sm transition-all duration-300 opacity-0 scale-95 w-fit max-w-full break-words"></p>
+             </div>
+          </div>
+
+          <div class="flex justify-center gap-4 mt-4">
+             <button onclick="speakTargetText()" class="w-12 h-12 rounded-full bg-surface-100 text-indigo-600 hover:bg-indigo-100 transition flex items-center justify-center text-lg" title="Nghe mẫu">
+               <i class="fa-solid fa-volume-high"></i>
+             </button>
+             <button id="micBtn" onclick="toggleRecording()" class="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-md hover:shadow-lg transition-transform transform flex items-center justify-center text-2xl relative">
+               <i id="micIcon" class="fa-solid fa-microphone"></i>
+               <span id="recordingPulse" class="hidden absolute inset-0 rounded-full border-4 border-red-300 animate-ping"></span>
+             </button>
+             <button onclick="nextSpeakingTarget()" class="w-12 h-12 rounded-full bg-surface-100 text-gray-600 hover:bg-gray-200 transition flex items-center justify-center text-lg" title="Bỏ qua">
+               <i class="fa-solid fa-forward-step"></i>
+             </button>
+          </div>
+
+          <div id="speakingResultBox" class="hidden mt-6 p-4 rounded-xl bg-surface-50 border border-surface-200 text-left transition-all">
+             <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Hệ thống nhận diện:</span>
+                <span id="speakingScoreBadge" class="text-xs font-bold px-2 py-1 rounded-full"></span>
+             </div>
+             <p id="speakingTranscript" class="text-base text-gray-700 italic"></p>
+          </div>
+
         </div>
       </div>
     </div>
