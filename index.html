@@ -51,6 +51,7 @@ tailwind.config = {
   darkMode: 'class',
   theme: {
     extend: {
+      colors: {
         brand: { 50:'#fff7ed',100:'#ffedd5',200:'#fed7aa',300:'#fdba74',400:'#fb923c',500:'#f97316',600:'#ea580c',700:'#c2410c',800:'#9a3412',900:'#7c2d12' },
         surface: { 50:'#fafaf9',100:'#f5f5f4',200:'#e7e5e4',300:'#d6d3d1' }
       },
@@ -60,7 +61,7 @@ tailwind.config = {
       }
     }
   }
-
+}
 </script>
 
 <!-- FontAwesome -->
@@ -261,11 +262,11 @@ tailwind.config = {
               <p class="mt-4 text-xs text-gray-400"><i class="fa-solid fa-hand-pointer mr-1"></i> Tap to reveal</p>
             </div>
             <!-- BACK -->
-            <div class="card-face card-back bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-lg p-6 sm:p-8 flex flex-col gap-4 overflow-y-auto">
+            <div class="card-face card-back card-back-terracotta shadow-lg p-6 sm:p-8 flex flex-col gap-4 overflow-y-auto">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex-1">
-                  <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-book mr-1"></i> Definition</p>
-                  <p id="fcDef" class="text-base leading-relaxed"></p>
+                  <p class="text-[10px] uppercase tracking-widest text-white/60 font-bold mb-1"><i class="fa-solid fa-book mr-1"></i> Definition</p>
+                  <p id="fcDef" class="text-lg font-medium leading-snug text-white"></p>
                 </div>
                 <button onclick="event.stopPropagation(); speakWord(document.getElementById('fcWord').textContent, this)"
                   class="speaker-btn speaker-btn-light flex-shrink-0" title="Listen">
@@ -274,17 +275,17 @@ tailwind.config = {
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-equals mr-1"></i> Synonyms</p>
-                  <p id="fcSyn" class="text-sm leading-relaxed text-brand-100"></p>
+                  <p class="text-[10px] uppercase tracking-widest text-white/60 font-bold mb-1"><i class="fa-solid fa-equals mr-1"></i> Synonyms</p>
+                  <p id="fcSyn" class="text-sm leading-relaxed text-white/90"></p>
                 </div>
                 <div>
-                  <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-not-equal mr-1"></i> Antonyms</p>
-                  <p id="fcAnt" class="text-sm leading-relaxed text-brand-100"></p>
+                  <p class="text-[10px] uppercase tracking-widest text-white/60 font-bold mb-1"><i class="fa-solid fa-not-equal mr-1"></i> Antonyms</p>
+                  <p id="fcAnt" class="text-sm leading-relaxed text-white/90"></p>
                 </div>
               </div>
-              <div>
-                <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold mb-1"><i class="fa-solid fa-quote-left mr-1"></i> Example</p>
-                <p id="fcCtx" class="text-sm italic leading-relaxed text-brand-100"></p>
+              <div class="mt-auto pt-4 border-t border-white/10">
+                <p class="text-[10px] uppercase tracking-widest text-white/60 font-bold mb-1"><i class="fa-solid fa-quote-left mr-1"></i> Example</p>
+                <p id="fcCtx" class="text-sm italic leading-relaxed text-white"></p>
               </div>
             </div>
           </div>

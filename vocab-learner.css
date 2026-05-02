@@ -30,6 +30,10 @@ body {
  border-radius: 1rem; overflow: auto;
 }
 .card-back { transform: rotateY(180deg); }
+.card-back-terracotta {
+  background: linear-gradient(135deg, #ea580c, #9a3412);
+  color: white;
+}
 
 
 /* ── Scrollbar ───────────────────────────────────────────── */

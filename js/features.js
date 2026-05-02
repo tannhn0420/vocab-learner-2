@@ -156,6 +156,11 @@
     updateGoalNavBtn();
     toast('Daily goal set! Let\'s go! 🚀', 'success');
     closeDailyGoalModal();
+
+    // Request Notification Permission for Reminders
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
   };
 
   window.skipDailyGoal = function() {
@@ -275,6 +280,34 @@
       setTimeout(() => openDailyGoalModal(), 500);
       }
     }
+    setupGoalReminders();
+  }
+
+  function setupGoalReminders() {
+    if (!('Notification' in window)) return;
+    // Check every minute
+    setInterval(() => {
+      const goal = loadDailyGoal();
+      if (!goal || goal.completed) return;
+      
+      const lastRemind = localStorage.getItem(GOAL_KEY + '_last_remind');
+      const now = Date.now();
+      // 2 hours = 7200000 ms
+      if (!lastRemind || now - parseInt(lastRemind) > 7200000) {
+        if (Notification.permission === 'granted') {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification('Nhắc nhở học tập! 📚', {
+              body: 'Bạn chưa hoàn thành mục tiêu hôm nay. Hãy dành vài phút học ngay để giữ chuỗi (streak) nhé!',
+              icon: 'icon-192.png',
+              badge: 'icon-192.png',
+              vibrate: [200, 100, 200],
+              tag: 'goal-reminder'
+            });
+          });
+          localStorage.setItem(GOAL_KEY + '_last_remind', now.toString());
+        }
+      }
+    }, 60000);
   }
 
   /* ━━━━━━━━━ DARK MODE ━━━━━━━━━ */
