@@ -1486,29 +1486,30 @@ body {
 
 
 /* ══════════════════════════════════════
-  Dark Mode
+  Dark Mode (Cinematic / ElevenLabs inspired)
   ══════════════════════════════════════ */
-html.dark body { background: #0f172a; color: #f1f5f9; }
-html.dark .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
-html.dark .bg-surface-50 { background-color: #0f172a !important; }
-html.dark .border-surface-200 { border-color: #334155 !important; }
-html.dark .border-surface-100 { border-color: #1e293b !important; }
-html.dark .text-gray-800 { color: #f1f5f9 !important; }
-html.dark .text-gray-700 { color: #e2e8f0 !important; }
-html.dark .text-gray-600 { color: #cbd5e1 !important; }
-html.dark .text-gray-500 { color: #94a3b8 !important; }
-html.dark .text-gray-400 { color: #64748b !important; }
-html.dark .bg-brand-50 { background-color: #1e3a8a !important; color: #bfdbfe !important; }
-html.dark .hover\:bg-surface-50:hover { background-color: #334155 !important; }
-html.dark .bg-surface-100 { background-color: #334155 !important; }
-html.dark nav { background-color: rgba(30, 41, 59, 0.9) !important; border-bottom-color: #334155 !important; }
-html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-lg, html.dark .shadow-2xl { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.5) !important; }
-html.dark input, html.dark select, html.dark textarea { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
-html.dark .card-face.bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
-html.dark .hover\:bg-brand-50:hover { background-color: #1e3a8a !important; }
-html.dark .tab-btn.active.bg-brand-50 { background-color: #1e3a8a !important; color: #60a5fa !important; }
-html.dark #exportDropdown { background-color: #1e293b !important; border-color: #334155 !important; }
-html.dark .story-rendered { color: #e2e8f0; }
+html.dark body { background: #09090b; color: #ededed; }
+html.dark .bg-white { background-color: #18181b !important; border-color: #27272a !important; }
+html.dark .bg-surface-50 { background-color: #09090b !important; }
+html.dark .border-surface-200 { border-color: #27272a !important; }
+html.dark .border-surface-100 { border-color: #18181b !important; }
+html.dark .text-gray-800 { color: #ededed !important; }
+html.dark .text-gray-700 { color: #d4d4d8 !important; }
+html.dark .text-gray-600 { color: #a1a1aa !important; }
+html.dark .text-gray-500 { color: #71717a !important; }
+html.dark .text-gray-400 { color: #52525b !important; }
+html.dark .bg-brand-50 { background-color: rgba(59, 130, 246, 0.1) !important; color: #60a5fa !important; border: 1px solid rgba(59, 130, 246, 0.2); }
+html.dark .hover\:bg-surface-50:hover { background-color: #27272a !important; }
+html.dark .bg-surface-100 { background-color: #27272a !important; }
+html.dark nav { background-color: rgba(9, 9, 11, 0.8) !important; border-bottom-color: #27272a !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-lg, html.dark .shadow-2xl { box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 8px 16px -4px rgba(0, 0, 0, 0.5) !important; }
+html.dark input, html.dark select, html.dark textarea { background-color: #09090b !important; color: #ededed !important; border-color: #27272a !important; }
+html.dark input:focus, html.dark select:focus, html.dark textarea:focus { border-color: #60a5fa !important; box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important; }
+html.dark .card-face.bg-white { background-color: #18181b !important; border-color: #27272a !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 20px 40px -10px rgba(0,0,0,0.5) !important; }
+html.dark .hover\:bg-brand-50:hover { background-color: rgba(59, 130, 246, 0.15) !important; }
+html.dark .tab-btn.active.bg-brand-50 { background-color: rgba(59, 130, 246, 0.1) !important; color: #60a5fa !important; }
+html.dark #exportDropdown { background-color: #18181b !important; border-color: #27272a !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 10px 20px rgba(0,0,0,0.5) !important; }
+html.dark .story-rendered { color: #d4d4d8; }
 
 /* ══════════════════════════════════════
   Speaking Feature

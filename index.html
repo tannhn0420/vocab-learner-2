@@ -36,6 +36,13 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Vocab Learner — English Vocabulary Builder</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b82f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vocab Learner">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -64,7 +71,7 @@ tailwind.config = {
 <link rel="stylesheet" href="vocab-learner.css"/>
 </head>
 
-<body class="bg-surface-50 antialiased transition-colors duration-300">
+<body class="bg-surface-50 antialiased transition-colors duration-300 pb-20 sm:pb-8">
 
 <!-- ═══════════════════ NAVBAR ═══════════════════ -->
 <nav class="bg-white/80 backdrop-blur-md border-b border-surface-200 sticky top-0 z-50">
@@ -77,7 +84,7 @@ tailwind.config = {
       </a>
       <a href=""><span class="text-lg font-bold text-brand-800 tracking-tight">Vocab Learner</span></a>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-1 sm:gap-3">
       <div id="wordCountBadge" class="hidden items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full">
         <i class="fa-solid fa-layer-group"></i>
         <span id="wordCountText">0 words</span>
@@ -207,31 +214,31 @@ tailwind.config = {
   <!-- ——— TABS (hidden until data loads) ——— -->
   <section id="appContent" class="hidden fade-in space-y-8">
 
-    <!-- Tab bar -->
-    <div class="flex items-center gap-1 bg-white rounded-xl p-1.5 shadow-sm border border-surface-200 max-w-xl mx-auto">
-      <button data-tab="flashcards" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition active text-brand-700 bg-brand-50"
+    <!-- Tab bar (Bottom Nav on Mobile) -->
+    <div class="fixed sm:static bottom-0 left-0 w-full sm:w-auto sm:max-w-2xl mx-auto bg-white/90 sm:bg-white dark:bg-[#18181b]/90 backdrop-blur-xl sm:backdrop-blur-none border-t sm:border border-surface-200 p-2 sm:p-1.5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-none sm:shadow-sm z-50 flex items-center justify-around sm:justify-start gap-1 overflow-x-auto scrollbar-hide pb-[max(env(safe-area-inset-bottom,0.5rem),0.5rem)] sm:pb-1.5 rounded-none sm:rounded-xl">
+      <button data-tab="flashcards" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition active text-brand-700 bg-transparent sm:bg-brand-50"
         onclick="switchTab('flashcards')">
-        <i class="fa-solid fa-clone mr-1"></i> Flashcards
+        <i class="fa-solid fa-clone text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Flashcards</span>
       </button>
-      <button data-tab="list" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+      <button data-tab="list" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
         onclick="switchTab('list')">
-        <i class="fa-solid fa-table-list mr-1"></i> List
+        <i class="fa-solid fa-table-list text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>List</span>
       </button>
-      <button data-tab="quiz" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+      <button data-tab="quiz" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
         onclick="switchTab('quiz')">
-        <i class="fa-solid fa-gamepad mr-1"></i> Quiz
+        <i class="fa-solid fa-gamepad text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Quiz</span>
       </button>
-      <button data-tab="reader" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+      <button data-tab="reader" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
         onclick="switchTab('reader')">
-        <i class="fa-solid fa-newspaper mr-1"></i> Reader
+        <i class="fa-solid fa-newspaper text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Reader</span>
       </button>
-      <button data-tab="story" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+      <button data-tab="story" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
         onclick="switchTab('story')">
-        <i class="fa-solid fa-book-open-reader mr-1"></i> <span class="hidden sm:inline">Truyện</span><span class="sm:hidden">TC</span>
+        <i class="fa-solid fa-book-open-reader text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Truyện</span>
       </button>
-      <button data-tab="speaking" class="tab-btn flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition text-gray-500"
+      <button data-tab="speaking" class="tab-btn flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 flex-1 shrink-0 py-2 sm:py-2 px-1 sm:px-3 text-[10px] sm:text-sm font-semibold sm:rounded-lg transition text-gray-500"
         onclick="switchTab('speaking')">
-        <i class="fa-solid fa-microphone mr-1"></i> Luyện Nói
+        <i class="fa-solid fa-microphone text-lg sm:text-base mb-0.5 sm:mb-0"></i> <span>Speaking</span>
       </button>
     </div>
 
@@ -248,10 +255,10 @@ tailwind.config = {
         </div>
 
         <!-- The card -->
-        <div class="perspective w-full max-w-md" style="height:400px;">
+        <div class="perspective w-full max-w-md h-[360px] sm:h-[420px]">
           <div id="flashcard" class="card-inner cursor-pointer" onclick="flipCard()">
             <!-- FRONT -->
-            <div class="card-face bg-white border border-surface-200 shadow-lg flex flex-col items-center justify-center p-8 select-none">
+            <div class="card-face bg-white border border-surface-200 shadow-lg flex flex-col items-center justify-center p-6 sm:p-8 select-none">
               <p class="text-xs uppercase tracking-widest text-brand-400 mb-3 font-semibold">Word</p>
               <h2 id="fcWord" class="text-4xl sm:text-5xl font-extrabold text-brand-800 text-center break-words leading-tight"></h2>
               <p id="fcCollocations" class="text-sm text-emerald-600 mt-3 font-medium"></p>
@@ -296,18 +303,18 @@ tailwind.config = {
         </div>
 
         <!-- Navigation buttons -->
-        <div class="flex items-center gap-4">
-          <button onclick="fcNav(-1)" class="w-12 h-12 rounded-full bg-white border border-surface-200 shadow-sm text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center">
+        <div class="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center px-4">
+          <button onclick="fcNav(-1)" class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full bg-white border border-surface-200 shadow-sm text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center">
             <i class="fa-solid fa-chevron-left"></i>
           </button>
-          <button onclick="shuffleCards()" class="h-10 px-5 rounded-full bg-white border border-surface-200 shadow-sm text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center gap-2">
-            <i class="fa-solid fa-shuffle"></i> Shuffle
+          <button onclick="shuffleCards()" class="h-10 px-3 sm:px-5 rounded-full bg-white border border-surface-200 shadow-sm text-xs sm:text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center gap-1.5 sm:gap-2">
+            <i class="fa-solid fa-shuffle"></i> <span class="hidden sm:inline">Shuffle</span>
           </button>
-          <button onclick="markKnown()" class="h-10 px-5 rounded-full bg-white border border-surface-200 shadow-sm text-sm font-medium text-green-600 hover:bg-green-50 hover:border-green-300 transition flex items-center gap-2"
+          <button onclick="markKnown()" class="h-10 px-3 sm:px-5 rounded-full bg-white border border-surface-200 shadow-sm text-xs sm:text-sm font-medium text-green-600 hover:bg-green-50 hover:border-green-300 transition flex items-center gap-1.5 sm:gap-2"
             title="Skip this word — I already know it">
-            <i class="fa-solid fa-circle-check"></i> Known
+            <i class="fa-solid fa-circle-check"></i> <span class="hidden sm:inline">Known</span>
           </button>
-          <button onclick="fcNav(1)" class="w-12 h-12 rounded-full bg-white border border-surface-200 shadow-sm text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center">
+          <button onclick="fcNav(1)" class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full bg-white border border-surface-200 shadow-sm text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center">
             <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
@@ -963,9 +970,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- App Script -->
-<script src="vocab-learner.js"></script>
-
 <!-- ═══════════════════ ADD WORD MODAL ═══════════════════ -->
 <div id="addWordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
   <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden max-h-[90vh] flex flex-col">
@@ -1297,8 +1301,31 @@ tailwind.config = {
   </div>
   <div id="goalWidgetInner" class="goal-widget-body"></div>
 </div>
+<!-- App JS -->
+<script src="js/state.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/core.js"></script>
+<script src="js/flashcards.js"></script>
+<script src="js/list.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/story.js"></script>
+<script src="js/data.js"></script>
+<script src="js/reader.js"></script>
+<script src="js/dictionary.js"></script>
+<script src="js/features.js"></script>
+<script src="js/boot.js"></script>
+
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed', err));
+    });
+  }
+</script>
 
 </body>
 </html>
-
-​​
