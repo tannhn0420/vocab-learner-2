@@ -1,4 +1,6 @@
 /* ━━━━━━━━━ SETTINGS ━━━━━━━━━ */
+  window.PREFERRED_VOICE = 'auto';
+
   function loadSettings() {
     try {
       const s = localStorage.getItem(SETTINGS_KEY);
@@ -6,13 +8,15 @@
         const settings = JSON.parse(s);
         AUTO_FLIP_MS = settings.autoFlipMs || 120000;
         AUTO_NEXT_MS = settings.autoNextMs || 20000;
+        window.PREFERRED_VOICE = settings.preferredVoice || 'auto';
       }
     } catch (_) {}
   }
   function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
       autoFlipMs: AUTO_FLIP_MS,
-      autoNextMs: AUTO_NEXT_MS
+      autoNextMs: AUTO_NEXT_MS,
+      preferredVoice: window.PREFERRED_VOICE
     }));
   }
 
@@ -21,6 +25,14 @@
     $('settingsFlipMin').value = Math.floor(AUTO_FLIP_MS / 60000);
     $('settingsFlipSec').value = Math.floor((AUTO_FLIP_MS % 60000) / 1000);
     $('settingsNextSec').value = Math.floor(AUTO_NEXT_MS / 1000);
+    
+    if (window.populateVoicesDropdown) {
+      window.populateVoicesDropdown();
+    }
+    const voiceSelect = $('settingsVoice');
+    if (voiceSelect) {
+      voiceSelect.value = window.PREFERRED_VOICE;
+    }
   };
 
   window.closeSettings = function() {
@@ -31,6 +43,11 @@
     const flipMin = parseInt($('settingsFlipMin').value) || 0;
     const flipSec = parseInt($('settingsFlipSec').value) || 0;
     const nextSec = parseInt($('settingsNextSec').value) || 10;
+    
+    const voiceSelect = $('settingsVoice');
+    if (voiceSelect) {
+      window.PREFERRED_VOICE = voiceSelect.value;
+    }
 
     AUTO_FLIP_MS = (flipMin * 60 + flipSec) * 1000;
     AUTO_NEXT_MS = nextSec * 1000;
