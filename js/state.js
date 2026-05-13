@@ -32,9 +32,12 @@
   const REPORT_KEY = 'vocabLearnerReports';
   const STORY_KEY  = 'vocabLearnerStories';
   const GOAL_KEY   = 'vocabLearnerDailyGoal';
+  const STATS_KEY  = 'vocabLearnerWordStats';
   let srsLevels  = {};          // { "word_lowercase": 0‑5 }
   let skippedWords = new Set();  // words marked as known/skip
   let wrongWords = new Set();    // words answered incorrectly
+  let wordStats  = {};          // { "word_lowercase": { seen, correct, wrong, streak, lastSeen } }
+  let showLeechOnly = false;    // vocab list leech filter
 
   /* ━━━━━━━━━ DOM SHORTCUT ━━━━━━━━━ */
   const $ = id => document.getElementById(id);
@@ -55,9 +58,50 @@
     const k = word.toLowerCase().trim();
     srsLevels[k] = correct ? Math.min((srsLevels[k] || 0) + 1, 5) : 0;
     saveSRS();
+    updateStats(word, correct);
   }
   function srsLabel(level) {
     return ['New','Learning','Familiar','Good','Strong','Mastered'][level] || 'New';
+  }
+
+  /* ━━━━━━━━━ PER-WORD STATS ━━━━━━━━━ */
+  function loadStats() {
+    try {
+      const d = localStorage.getItem(STATS_KEY);
+      if (d) wordStats = JSON.parse(d);
+    } catch (_) { wordStats = {}; }
+  }
+  function saveStats() { localStorage.setItem(STATS_KEY, JSON.stringify(wordStats)); }
+
+  function getStats(word) {
+    return wordStats[word.toLowerCase().trim()] || null;
+  }
+  function updateStats(word, correct) {
+    const k = word.toLowerCase().trim();
+    const s = wordStats[k] || { seen: 0, correct: 0, wrong: 0, streak: 0, lastSeen: null };
+    s.seen += 1;
+    if (correct) { s.correct += 1; s.streak = (s.streak || 0) + 1; }
+    else         { s.wrong += 1; s.streak = 0; }
+    s.lastSeen = new Date().toISOString();
+    wordStats[k] = s;
+    saveStats();
+  }
+  function getAccuracy(word) {
+    const s = getStats(word);
+    if (!s || s.seen === 0) return null;
+    return s.correct / s.seen;
+  }
+  // Leech: seen ≥ 4 and accuracy < 40%
+  function isLeech(word) {
+    const s = getStats(word);
+    if (!s || s.seen < 4) return false;
+    return (s.correct / s.seen) < 0.4;
+  }
+  function countLeeches() {
+    if (!Array.isArray(vocabData) || !vocabData.length) return 0;
+    let n = 0;
+    for (const v of vocabData) if (isLeech(v.word)) n++;
+    return n;
   }
 
   /* ━━━━━━━━━ SKIPPED / KNOWN WORDS ━━━━━━━━━ */
@@ -201,7 +245,7 @@
     } else {
       list.innerHTML = reports.map((r, i) => {
         const date = new Date(r.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
-        const modes = { mc:'MC', typein:'Type-in', cloze:'Cloze', listening:'Listening', reverse:'Reverse', synonym:'Synonym', smart:'⚡ Smart' };
+        const modes = { mc:'MC', typein:'Type-in', cloze:'Cloze', listening:'Listening', reverse:'Reverse', synonym:'Synonym', speaking:'Speaking', dictation:'Dictation', smart:'⚡ Smart' };
         const pctColor = r.pct >= 80 ? 'text-green-600' : r.pct >= 50 ? 'text-amber-600' : 'text-red-600';
         return `<div class="border border-surface-200 rounded-xl p-4 space-y-2 hover:bg-surface-50 transition">
           <div class="flex items-center justify-between">

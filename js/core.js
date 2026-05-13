@@ -4,6 +4,7 @@
     loadSettings();
     loadSkipped();
     loadWrongWords();
+    loadStats();
 
     const fileInput  = $('fileInput');
     const dropZone   = $('dropZone');
@@ -81,7 +82,7 @@
 
         // Submit typed answer with Enter or Space (when input not focused, Space submits)
         const _curQType = (quizMode === 'mixed' || quizMode === 'smart') ? (quizQuestions[quizIdx]?.type) : quizMode;
-        if (!quizAnswered && (_curQType === 'typein' || _curQType === 'cloze' || _curQType === 'listening' || _curQType === 'reverse')) {
+        if (!quizAnswered && (_curQType === 'typein' || _curQType === 'cloze' || _curQType === 'listening' || _curQType === 'reverse' || _curQType === 'dictation')) {
           if (inp && document.activeElement === inp && (e.key === 'Enter' )) {
             // Space inside input: only submit if it looks like a single-word answer
             if (inp.value.trim().indexOf(' ') === -1 && inp.value.trim().length > 0) {

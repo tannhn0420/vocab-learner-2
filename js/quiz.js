@@ -33,8 +33,8 @@
       }
     }
 
-    // Listening mode — hearing confusion
-    if (q.type === 'listening') {
+    // Listening / Dictation — hearing confusion
+    if (q.type === 'listening' || q.type === 'dictation') {
       return { type: 'hearing', label: 'Hearing Confusion', icon: 'fa-ear-listen', color: 'indigo' };
     }
 
@@ -191,6 +191,13 @@
         if (new RegExp('\\b' + escRx(v.word) + '\\b', 'i').test(v.context)) pool.push(i);
       });
       if (pool.length < 2) { toast('Not enough context data for Cloze in this range. Try another mode.', 'error'); return; }
+    } else if (quizMode === 'dictation') {
+      pool = [];
+      rangeIndices.forEach(i => {
+        const v = vocabData[i];
+        if (v.context && v.context.trim()) pool.push(i);
+      });
+      if (pool.length < 2) { toast('Not enough example sentences for Dictation in this range. Try another mode.', 'error'); return; }
     } else if (quizMode === 'synonym') {
       pool = [];
       rangeIndices.forEach(i => {
@@ -214,6 +221,7 @@
         const v = vocabData[idx];
         const eligible = selectedModes.filter(m => {
           if (m === 'cloze') return v.context && new RegExp('\\b' + escRx(v.word) + '\\b', 'i').test(v.context);
+          if (m === 'dictation') return v.context && v.context.trim();
           if (m === 'synonym') return v.synonyms && v.synonyms.trim() && v.synonyms.trim() !== '—';
           if (m === 'mc') return pool.length >= 4;
           return true;
@@ -226,7 +234,11 @@
         return buildQuizQuestion(idx, mode);
       });
     } else {
-      quizQuestions = picked.map(idx => buildQuizQuestion(idx, quizMode));
+      quizQuestions = picked.map(idx => {
+        const q = buildQuizQuestion(idx, quizMode);
+        if (quizMode === 'dictation' && (!q.sentence || !q.sentence.trim())) return buildQuizQuestion(idx, 'typein');
+        return q;
+      });
     }
     quizIdx   = 0;
     quizScore = { correct:0, wrong:0 };
@@ -403,6 +415,10 @@
     if (mode === 'speaking') {
       return { type:'speaking', word:c.word, definition:c.definition, answer:c.word, phonetics:c.phonetics, idx };
     }
+    if (mode === 'dictation') {
+      // Full-sentence dictation: hear the example sentence, type it back
+      return { type:'dictation', sentence:c.context, answer:c.context, word:c.word, definition:c.definition, idx };
+    }
     /* cloze */
     const rx = new RegExp('\\b' + escRx(c.word) + '\\b', 'i');
     return { type:'cloze', clozeText:c.context.replace(rx, '_____'),
@@ -438,7 +454,7 @@
     $('quizSubmitBtn').classList.remove('hidden');
 
     /* mode badge */
-    const labels = { mc:'Multiple Choice', typein:'Type-in', cloze:'Cloze Test', listening:'Listening', reverse:'Reverse', synonym:'Synonym Match', speaking:'Speaking', smart:'⚡ Smart' };
+    const labels = { mc:'Multiple Choice', typein:'Type-in', cloze:'Cloze Test', listening:'Listening', reverse:'Reverse', synonym:'Synonym Match', speaking:'Speaking', dictation:'Dictation', smart:'⚡ Smart' };
     const badgeLabel = (labels[q.type] || '');
     $('quizModeBadge').textContent = quizMode === 'mixed' ? '🎲 ' + badgeLabel : badgeLabel;
 
@@ -467,6 +483,13 @@
       $('quizInputArea').classList.remove('hidden');
       inp.placeholder = 'Type what you hear…';
       setTimeout(() => { speakWord(q.answer); inp.focus(); }, 300);
+
+    } else if (q.type === 'dictation') {
+      $('quizPrompt').innerHTML = '<i class="fa-solid fa-headphones mr-1"></i> Listen and type the full sentence:';
+      $('quizQuestion').innerHTML = '<button onclick=\"speakWord(this.dataset.sentence, this)\" data-sentence=\"' + escAttr(q.sentence) + '\" class=\"speaker-btn mx-auto\" style=\"width:4rem;height:4rem;font-size:1.5rem\" title=\"Play again\"><i class=\"fa-solid fa-volume-high\"></i></button><br><span class=\"text-xs text-gray-400 mt-2\">Click to replay · You can play multiple times</span>';
+      $('quizInputArea').classList.remove('hidden');
+      inp.placeholder = 'Type the sentence you hear…';
+      setTimeout(() => { speakWord(q.sentence); inp.focus(); }, 300);
 
     } else if (q.type === 'reverse') {
       $('quizPrompt').textContent = 'What does this word mean? Type a key part of the definition:';
@@ -574,6 +597,48 @@
     afterAnswer(wordKey, ok);
   };
 
+  /* Normalize a sentence for dictation comparison */
+  function normalizeForDictation(s) {
+    return (s || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s']/gu, ' ')   // strip punctuation (keep apostrophes)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  /* Compare two sentences word-by-word. Returns { matched, total, diffHTML } */
+  function diffDictation(userText, target) {
+    const u = normalizeForDictation(userText).split(' ').filter(Boolean);
+    const t = normalizeForDictation(target).split(' ').filter(Boolean);
+    // Use LCS for an order-preserving diff
+    const m = u.length, n = t.length;
+    const dp = Array.from({length: m + 1}, () => new Uint16Array(n + 1));
+    for (let i = 1; i <= m; i++)
+      for (let j = 1; j <= n; j++)
+        dp[i][j] = u[i-1] === t[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
+    // Walk back to mark which target words were matched
+    const matchedFlags = new Array(n).fill(false);
+    let i = m, j = n;
+    while (i > 0 && j > 0) {
+      if (u[i-1] === t[j-1]) { matchedFlags[j-1] = true; i--; j--; }
+      else if (dp[i-1][j] >= dp[i][j-1]) i--;
+      else j--;
+    }
+    const matched = matchedFlags.filter(Boolean).length;
+    const targetWords = (target || '').split(/(\s+)/); // keep whitespace tokens
+    // Build pretty diff: highlight target words green if matched, red if missed
+    let wIdx = 0;
+    const html = targetWords.map(tok => {
+      if (/^\s+$/.test(tok)) return tok;
+      const norm = normalizeForDictation(tok);
+      if (!norm) return esc(tok);
+      const ok = matchedFlags[wIdx];
+      wIdx++;
+      const cls = ok ? 'dict-word-ok' : 'dict-word-miss';
+      return `<span class="${cls}">${esc(tok)}</span>`;
+    }).join('');
+    return { matched, total: n, diffHTML: html };
+  }
+
   /* ━━━━━━━━━ QUIZ — TEXT ANSWER (TYPE-IN / CLOZE) ━━━━━━━━━ */
   window.submitTextAnswer = function() {
     if (quizAnswered) return;
@@ -586,8 +651,14 @@
 
     let ok;
     let displayAnswer;
+    let dictResult = null;
 
-    if (q.type === 'reverse') {
+    if (q.type === 'dictation') {
+      dictResult = diffDictation(val, q.answer);
+      const pct = dictResult.total ? dictResult.matched / dictResult.total : 0;
+      ok = pct >= 0.85;
+      displayAnswer = q.answer;
+    } else if (q.type === 'reverse') {
       // For reverse mode: check if user's answer contains key words from the definition
       // Accept if ≥ 60% word overlap or contains a significant substring
       const defWords = q.answer.toLowerCase().split(/\s+/).filter(w => w.length > 3);
@@ -614,7 +685,12 @@
       quizScore.correct++;
       inp.classList.add('correct-input');
       fb.classList.add('correct-feedback');
-      if (q.type === 'reverse') {
+      if (q.type === 'dictation') {
+        const sub = dictResult && dictResult.total > dictResult.matched
+          ? '<div class="dict-diff mt-2">' + dictResult.diffHTML + '</div><div class="text-xs text-gray-500 mt-1">' + dictResult.matched + '/' + dictResult.total + ' words matched</div>'
+          : '';
+        fb.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Great! You got the sentence.' + sub;
+      } else if (q.type === 'reverse') {
         fb.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Correct! Full definition: "' + esc(displayAnswer) + '"';
       } else {
         fb.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Correct! "' + esc(displayAnswer) + '"';
@@ -623,7 +699,11 @@
       quizScore.wrong++;
       inp.classList.add('wrong-input');
       fb.classList.add('wrong-feedback');
-      if (q.type === 'reverse') {
+      if (q.type === 'dictation') {
+        const diff = dictResult ? dictResult.diffHTML : esc(displayAnswer);
+        const score = dictResult ? dictResult.matched + '/' + dictResult.total + ' words matched' : '';
+        fb.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Not quite. Target sentence:<div class="dict-diff mt-2">' + diff + '</div><div class="text-xs text-gray-500 mt-1">' + score + '</div>';
+      } else if (q.type === 'reverse') {
         fb.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Not quite. The definition is: "<strong>' + esc(displayAnswer) + '</strong>"';
       } else {
         fb.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Wrong! The answer is "<strong>' + esc(displayAnswer) + '</strong>"';
@@ -632,7 +712,7 @@
     inp.disabled = true;
     $('quizSubmitBtn').classList.add('hidden');
 
-    const srsWord = q.type === 'reverse' ? q.word : (q.answer || q.word);
+    const srsWord = q.type === 'reverse' ? q.word : (q.type === 'dictation' ? q.word : (q.answer || q.word));
     updateSRS(srsWord, ok);
     if (!ok) addWrongWord(srsWord);
     else removeWrongWord(srsWord);
@@ -899,6 +979,7 @@
         const v = vocabData[idx];
         const eligible = selectedModes.filter(m => {
           if (m === 'cloze') return v.context && new RegExp('\\b' + escRx(v.word) + '\\b', 'i').test(v.context);
+          if (m === 'dictation') return v.context && v.context.trim();
           if (m === 'synonym') return v.synonyms && v.synonyms.trim() && v.synonyms.trim() !== '—';
           if (m === 'mc') return wrongIndices.length >= 4;
           return true;
@@ -913,6 +994,7 @@
       quizQuestions = picked.map(idx => {
         const q = buildQuizQuestion(idx, quizMode);
         if (quizMode === 'cloze' && !q.clozeText) return buildQuizQuestion(idx, 'typein');
+        if (quizMode === 'dictation' && (!q.sentence || !q.sentence.trim())) return buildQuizQuestion(idx, 'typein');
         return q;
       });
     }

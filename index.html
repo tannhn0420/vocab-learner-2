@@ -332,13 +332,16 @@ tailwind.config = {
     <div id="tab-list" class="tab-content hidden">
       <div class="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
         <!-- Search -->
-        <div class="p-4 border-b border-surface-200 flex items-center gap-3">
-          <div class="flex-1 relative">
+        <div class="p-4 border-b border-surface-200 flex items-center gap-3 flex-wrap">
+          <div class="flex-1 relative min-w-[140px]">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
             <input id="searchInput" type="text" placeholder="Search words…"
               class="w-full pl-9 pr-4 py-2.5 rounded-lg border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition"
               oninput="renderTable()"/>
           </div>
+          <button id="leechFilterBtn" type="button" onclick="toggleLeechFilter()" class="leech-filter-btn" title="Show only words you frequently get wrong">
+            <i class="fa-solid fa-bug mr-1"></i> Leeches <span id="leechCount" class="leech-count-badge">0</span>
+          </button>
           <span id="listCount" class="text-xs text-gray-400 whitespace-nowrap"></span>
         </div>
         <!-- Table container -->
@@ -354,6 +357,7 @@ tailwind.config = {
                 <th class="px-4 py-3 font-semibold hidden md:table-cell">Synonyms</th>
                 <th class="px-4 py-3 font-semibold hidden lg:table-cell">Antonyms</th>
                 <th class="px-4 py-3 font-semibold hidden lg:table-cell">Example</th>
+                <th class="px-4 py-3 font-semibold hidden md:table-cell">Stats</th>
                 <th class="px-4 py-3 font-semibold hidden sm:table-cell">Level</th>
               </tr>
             </thead>
@@ -397,6 +401,7 @@ tailwind.config = {
               <button type="button" data-mode="reverse" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🔄 Reverse</button>
               <button type="button" data-mode="synonym" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🔗 Synonym</button>
               <button type="button" data-mode="speaking" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">🗣️ Speaking</button>
+              <button type="button" data-mode="dictation" onclick="toggleQuizMode(this)" class="quiz-mode-chip active">📝 Dictation</button>
             </div>
             <div class="flex justify-center gap-3 mt-2">
               <button onclick="selectAllQuizModes()" class="text-xs text-brand-500 hover:text-brand-700 font-semibold transition">Select All</button>
@@ -429,6 +434,7 @@ tailwind.config = {
           <p><strong class="text-gray-500">Reverse:</strong> See a word, type its definition.</p>
           <p><strong class="text-gray-500">Synonym:</strong> Pick the correct synonym.</p>
           <p><strong class="text-gray-500">Speaking:</strong> Read the word aloud to practice pronunciation.</p>
+          <p><strong class="text-gray-500">Dictation:</strong> Hear a full example sentence and type it back — trains listening + spelling.</p>
           <p class="mt-1 text-amber-500"><strong>🧠 Recall Only:</strong> Type-in + Listening + Reverse — forces active recall for stronger memory.</p>
         </div>
 

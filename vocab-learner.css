@@ -197,6 +197,82 @@ body {
 .srs-5 { background: #f5f3ff; color: #7c3aed; }
 
 
+/* ── Leech Row & Filter ───────────────────────────────── */
+.leech-row {
+ background: linear-gradient(90deg, #fef2f2 0%, transparent 60%);
+ box-shadow: inset 3px 0 0 0 #ef4444;
+}
+.leech-row:hover {
+ background: linear-gradient(90deg, #fee2e2 0%, #f8fafc 60%) !important;
+}
+.leech-filter-btn {
+ display: inline-flex;
+ align-items: center;
+ gap: 4px;
+ font-size: 0.75rem;
+ font-weight: 600;
+ padding: 6px 12px;
+ border-radius: 9999px;
+ border: 1.5px solid #fecaca;
+ background: #fef2f2;
+ color: #dc2626;
+ white-space: nowrap;
+ transition: all 0.15s ease;
+}
+.leech-filter-btn:hover {
+ border-color: #ef4444;
+ background: #fee2e2;
+}
+.leech-filter-btn.active {
+ background: #dc2626;
+ color: #fff;
+ border-color: #dc2626;
+ box-shadow: 0 1px 3px rgba(220, 38, 38, 0.3);
+}
+.leech-count-badge {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ min-width: 18px;
+ height: 18px;
+ padding: 0 5px;
+ font-size: 0.625rem;
+ font-weight: 700;
+ border-radius: 9999px;
+ background: rgba(220, 38, 38, 0.15);
+ color: inherit;
+}
+.leech-filter-btn.active .leech-count-badge {
+ background: rgba(255,255,255,0.25);
+}
+
+
+/* ── Dictation Diff ─────────────────────────────────── */
+.dict-diff {
+ padding: 0.75rem 1rem;
+ background: #f8fafc;
+ border: 1px solid #e2e8f0;
+ border-radius: 0.5rem;
+ font-size: 0.95rem;
+ line-height: 1.6;
+ text-align: left;
+ word-spacing: 0.05em;
+}
+.dict-word-ok {
+ color: #059669;
+ font-weight: 600;
+}
+.dict-word-miss {
+ color: #dc2626;
+ font-weight: 600;
+ text-decoration: line-through;
+ text-decoration-color: rgba(220, 38, 38, 0.4);
+ background: #fef2f2;
+ padding: 0 3px;
+ border-radius: 3px;
+}
+
+
 /* ── Quiz Text Input ─────────────────────────────────────── */
 .quiz-text-input {
  width: 100%;
